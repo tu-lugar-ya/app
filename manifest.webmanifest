@@ -1,0 +1,18 @@
+{
+  "name": "Tu Lugar Ya · Equipo",
+  "short_name": "Tu Lugar Ya",
+  "description": "Visitas, inmuebles y clientes de Tu Lugar Ya en el celular.",
+  "lang": "es-CO",
+  "start_url": "./",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#00342E",
+  "theme_color": "#00342E",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
