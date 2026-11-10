@@ -488,6 +488,41 @@ a.btn, a.circ { text-decoration: none; }
 .siguen .s b { font-size: 14px; }
 .siguen .s span { font-size: 12.5px; color: var(--muted); }
 .siguen .s .ok { color: var(--st-conf); font-weight: 700; font-size: 13px; }
+
+/* 1.2 · Nada cortado: los textos bajan de línea en vez de terminar en "…" */
+.vrow .m b, .vrow .m span, .mini span, .cli div span, .opt div span, .prop .quien-l, .pg-t b, .minl span b { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.cli > div, .opt > div, .vrow .m { min-width: 0; }
+.chips { flex-wrap: wrap; overflow-x: visible; row-gap: 8px; }
+.linkbox code { white-space: normal; word-break: break-all; line-height: 1.35; }
+.duen { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.duen .r, .minl, .minl button, .duen .tres { min-width: 0; }
+.duen .tres { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.duen .tres .btn { padding: 0 6px; font-size: 13px; }
+.minl button { align-items: flex-start; }
+.minl .pill { align-self: center; flex: none; }
+.opt .ph0 { width: 46px; height: 46px; border-radius: 10px; flex: none; }
+.opt .ph0 svg { width: 20px; height: 20px; }
+.pg-t b { font-size: 15.5px; line-height: 1.2; }
+.una { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+@media (max-width: 360px) {
+  .grid2, .dos:has(> .campo) { grid-template-columns: minmax(0, 1fr); }
+  .pg-top { grid-template-columns: 70px minmax(0, 1fr) 70px; }
+  .opc button { font-size: 13.5px; padding: 12px 4px; }
+  .estados button { font-size: 12.5px; }
+  .cuatro { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.busq-nota { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; line-height: 1.45; }
+.busq-nota b { color: var(--ink); }
+.entendi { display: flex; flex-wrap: wrap; gap: 6px; }
+.entendi span { font-size: 12.5px; font-weight: 700; background: var(--st-conf-bg); color: var(--ink); border-radius: 8px; padding: 4px 8px; }
+.entendi span.no { background: var(--st-pend-bg); color: var(--st-pend); }
+.phm img, .phm .ph0 { width: 100%; height: 100%; object-fit: cover; display: block; }
+.elegido > div:nth-child(2) { min-width: 0; }
+@media (max-width: 420px) {
+  .cli { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 6px; }
+  .cli > .av { grid-row: span 2; align-self: center; }
+  .cli > .pill, .cli > span:not(.av):last-child { grid-column: 2; justify-self: start; }
+}
 </style>
 </head>
 <body>
@@ -708,11 +743,106 @@ function mensajeComercial(i) {
 })();
 </script>
 <script>
+window.TLYMSG = (function () {
+  'use strict';
+  /* Lee el mensaje que manda un aliado o propietario por WhatsApp (uno o varios mensajes pegados juntos).
+     Usa el lector de avisos del sistema y le agrega: números en palabras, pisos ordinales, el precio más
+     reciente, baños contados, negaciones, amoblado, nombre del conjunto, zonas comunes y fecha de disponibilidad. */
+  const nrm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const NW = { un: 1, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12 };
+  const ORD = { primer: 1, primero: 1, primera: 1, segundo: 2, segunda: 2, tercer: 3, tercero: 3, tercera: 3, cuarto: 4, cuarta: 4, quinto: 5, quinta: 5, sexto: 6, sexta: 6, septimo: 7, séptimo: 7, septima: 7, octavo: 8, octava: 8, noveno: 9, novena: 9, decimo: 10, décimo: 10, decima: 10 };
+  const COSAS = 'habitaci[oó]n(?:es)?|alcobas?|cuartos?(?!\\s+[uú]til)|dormitorios?|ba[ñn]os?|parqueaderos?|garajes?|balc[oó]n(?:es)?|niveles?|pisos?|dep[oó]sitos?|carros?|puestos?';
+
+  function limpiar(T) {
+    return String(T || '')
+      .replace(/^\s*\[[^\]\n]{3,40}\]\s*[^:\n]{1,40}:\s*/gm, '\n')
+      .replace(/^\s*\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}[^-\n]{0,12}-\s*[^:\n]{1,40}:\s*/gm, '\n')
+      .replace(/‎|‏/g, '');
+  }
+  function trozos(T) {
+    const marcas = /^\s*(?:\[[^\]\n]{3,40}\]\s*[^:\n]{1,40}:|\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}[^-\n]{0,12}-\s*[^:\n]{1,40}:)/m;
+    if (!marcas.test(T)) return [limpiar(T)];
+    return String(T).split(/\n(?=\s*(?:\[[^\]\n]{3,40}\]|\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}))/).map(limpiar).filter(x => x.trim());
+  }
+  function numeros(s) {
+    s = s.replace(new RegExp('\\b(un|uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce)\\s+((?:\\p{L}+\\s+)?(?:' + COSAS + '))\\b', 'giu'), (m, w, resto) => NW[w.toLowerCase()] + ' ' + resto);
+    s = s.replace(/\b(primer[oa]?|segund[oa]|tercer[oa]?|cuart[oa]|quint[oa]|sext[oa]|s[eé]ptim[oa]|octav[oa]|noven[oa]|d[eé]cim[oa])\s+(piso|nivel)\b/giu, (m, w, p) => (ORD[nrm(w)] || ORD[w.toLowerCase()] || w) + ' ' + p);
+    s = s.replace(/\b(piso|nivel)\s+(primer[oa]?|segund[oa]|tercer[oa]?|cuart[oa]|quint[oa]|sext[oa]|s[eé]ptim[oa]|octav[oa]|noven[oa]|d[eé]cim[oa])\b/giu, (m, p, w) => p + ' ' + (ORD[nrm(w)] || w));
+    return s;
+  }
+  function contarBanos(t) {
+    let m, max = 0; const re = /(\d{1,2})\s*banos\b/g;
+    while ((m = re.exec(t))) { const antes = t.slice(Math.max(0, m.index - 20), m.index); if (!/otr[oa]s\s*$|con\s*$/.test(antes)) max = Math.max(max, +m[1]); }
+    if (max >= 2) return max;
+    let n = 0; const re2 = /\bbano\b/g;
+    while ((m = re2.exec(t))) {
+      const antes = t.slice(Math.max(0, m.index - 45), m.index), despues = t.slice(m.index, m.index + 25);
+      if (/(?:sin|no tiene|no hay)\s+(?:\w+\s+)?$/.test(antes)) continue;
+      if (/^bano\s+(?:de|del)\s+servicio/.test(despues)) continue;
+      const k = antes.match(/(\d)\s*(?:alcobas|habitaciones|cuartos)\s+con\s+(?:su\s+)?$/); n += k ? +k[1] : 1;
+    }
+    return Math.max(n, max);
+  }
+  const titulo = s => s.toLowerCase().replace(/(^|\s)(\p{L})/gu, (m, a, b) => a + b.toUpperCase()).replace(/\s(De|Del|La|Las|Los|El|Y)(?=\s)/g, m => m.toLowerCase());
+  function edificio(T) {
+    const re = /\b(parque residencial|conjunto residencial|conjunto cerrado|unidad residencial|edificio|conjunto|urbanizaci[oó]n|condominio|ciudadela|reserva|torres)\s+/giu; let m;
+    while ((m = re.exec(T))) {
+      const resto = T.slice(m.index + m[0].length).split(/[\n,.;:()]/)[0].trim().split(/\s+/), nombre = [];
+      for (const w of resto) { if (/^\p{Lu}|^\d/u.test(w)) nombre.push(w); else if (/^(de|del|la|las|los|el|y)$/i.test(w) && nombre.length) nombre.push(w); else break; if (nombre.length >= 5) break; }
+      while (nombre.length && /^(de|del|la|las|los|el|y)$/i.test(nombre[nombre.length - 1])) nombre.pop();
+      if (!nombre.length || (nombre.length === 1 && nombre[0].length < 3)) continue;
+      const todo = m[1] + ' ' + nombre.join(' ');
+      return /[a-záéíóúñ]/.test(todo.replace(m[1], '')) ? m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase() + ' ' + nombre.join(' ') : titulo(todo);
+    }
+    return '';
+  }
+  const ZONAS = [['piscina', 'Piscina'], ['gimnasio|\\bgym\\b', 'Gimnasio'], ['\\bbbq\\b|zona de asados|asadores', 'BBQ'], ['salon(?:\\s+(?:social|comunal))?\\b', 'Salón social'], ['juegos? (?:para|de) ninos|juegos infantiles|zona(?:s)? de juegos|parque infantil|zona infantil', 'Zona infantil'],
+    ['\\bturco\\b', 'Turco'], ['sauna', 'Sauna'], ['jacuzzi', 'Jacuzzi'], ['cancha', 'Cancha'], ['porteria|vigilancia|guardas|celaduria', 'Portería'], ['camaras|cctv|circuito cerrado', 'Cámaras de seguridad'], ['zonas verdes', 'Zonas verdes'],
+    ['coworking', 'Coworking'], ['terraza', 'Terraza'], ['planta electrica', 'Planta eléctrica'], ['parqueadero de visitantes|parqueaderos de visitantes', 'Parqueadero de visitantes'], ['ascensor', 'Ascensor']];
+  const DE_PRECIO = ['Canon (sin administración)', 'Precio de venta', 'Administración', 'Tipo de negocio'];
+
+  function leer(texto, con) {
+    const partes = trozos(texto), limpio = limpiar(texto).replace(/\n{2,}/g, '\n').trim();
+    const L = s => window.TLYAV.leer(numeros(s), con);
+    const r = {};
+    partes.forEach(p => { const x = L(p); Object.keys(x).forEach(k => { if (DE_PRECIO.indexOf(k) > -1 || r[k] === undefined) r[k] = x[k]; else if (k === 'Administración incluida' && x[k] === 'Sí') r[k] = 'Sí'; }); });
+    if (r['Tipo de negocio'] === 'Arriendo') delete r['Precio de venta']; if (r['Tipo de negocio'] === 'Venta') delete r['Canon (sin administración)'];
+    const todo = L(limpio); Object.keys(todo).forEach(k => { if (r[k] === undefined && DE_PRECIO.indexOf(k) < 0) r[k] = todo[k]; });
+    const t = nrm(numeros(limpio)).replace(/\s+/g, ' ');
+    if (/(?:incluid[ao]s?|incluye|con)\s+(?:la\s+)?(?:administracion|admon|admin)\b|(?:administracion|admon|admin|adm)\.?\s+(?:ya\s+)?incluid/.test(t)) r['Administración incluida'] = 'Sí';
+    else if (/(?:mas|\+)\s*(?:la\s+)?(?:administracion|admon|admin)|sin incluir (?:la\s+)?admin|no incluye (?:la\s+)?admin/.test(t)) r['Administración incluida'] = 'No';
+    if (r['Administración incluida'] === 'Sí' && r['Administración'] && r['Canon (sin administración)'] && r['Administración'] >= r['Canon (sin administración)']) delete r['Administración'];
+    const ban = contarBanos(t); if (ban) r['Baños totales'] = ban;
+    let ma; const reMil = /(\d{1,3}(?:\.\d{3})+)\s*(?:m2|m²|mts2?|mt2|metros)/g;
+    while ((ma = reMil.exec(t))) { const v = +ma[1].replace(/\./g, ''), antes = t.slice(Math.max(0, ma.index - 30), ma.index); if (/lote|terreno/.test(antes)) r['Área de lote'] = v; else if (!r['Área (m²)'] || r['Área (m²)'] < 100) r['Área (m²)'] = v; }
+    if (/(?:no|ño|sin)\s+(?:tiene\s+|hay\s+)?(?:alcoba|habitacion|cuarto)\s+(?:de|del)\s+servicio/.test(t)) r['Habitación de servicio'] = 'No';
+    if (/(?:no|ño|sin)\s+(?:tiene\s+|hay\s+)?bano\s+(?:de|del)\s+servicio/.test(t)) r['Baño de servicio'] = 'No'; else if (/bano\s+(?:de|del)\s+servicio/.test(t)) r['Baño de servicio'] = 'Sí';
+    if (/sin amoblar|no (?:esta |es )?amoblado|sin muebles|se entrega vacio/.test(t)) r['Amoblado'] = 'No';
+    else if (/amoblad|amueblad|dotado con (?:todos )?(?:los )?muebles|con todos los muebles|full muebles|completamente dotado|totalmente dotado|con muebles/.test(t)) r['Amoblado'] = 'Sí';
+    if (/sin ascensor|no tiene ascensor|no hay ascensor/.test(t)) r['Ascensor'] = 'No';
+    if (/\bpor piso\b|\bpuntos fijos\b|\btorre\b|\bconjunto\b|\bedificio\b/.test(t) && !r['Tipo de inmueble']) r['Tipo de inmueble'] = 'Apartamento';
+    const ed = edificio(limpio); if (ed) r['Edificio o conjunto'] = ed;
+    const am = ZONAS.filter(a => new RegExp(a[0]).test(t)).map(a => a[1]).filter(a => a !== 'Ascensor');
+    const previas = String(r['Amenidades'] || '').split(/\s*,\s*/).filter(Boolean);
+    const todas = previas.concat(am).filter((a, k, l) => l.map(nrm).indexOf(nrm(a)) === k); if (todas.length) r['Amenidades'] = todas.join(', ');
+    const notas = [];
+    const disp = t.match(/disponible\s+(?:a partir del?|desde el?|para el|el)\s+((?:\d{1,2}\s+de\s+)?(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre|inmediato|inmediatamente|ya)(?:\s+(?:de\s+)?\d{4})?)/);
+    if (disp) { r._desde = disp[1]; notas.push('Disponible a partir del ' + disp[1] + '.'); } else if (/disponible (?:de )?inmediat/.test(t)) notas.push('Disponible de inmediato.');
+    if (/ultimo piso/.test(t)) notas.push('Es el último piso.');
+    if (/parqueaderos? en linea/.test(t)) notas.push('Parqueaderos en línea.');
+    r._notas = notas;
+    r._original = limpio;
+    return r;
+  }
+  return { leer: leer, limpiar: limpiar };
+})();
+</script>
+<script>
 (function () {
   'use strict';
   var API = 'https://script.google.com/macros/s/AKfycbzbWblnXZ2ktqn1q3sylaNDP34ovmmSygImlA0E185h29N55IpgJ_PE_Pv7G8CcUJeV/exec';
   var SITIO = 'https://tu-lugar-ya.github.io/';
-  var VERSION = '1.1 · 9 nov 2026';
+  var VERSION = '1.2 · 10 nov 2026';
   var DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], DIASL = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   var ACTIVAS = ['Por confirmar', 'Confirmada', 'Reprogramada'];
@@ -1042,34 +1172,119 @@ function mensajeComercial(i) {
 
   /* ---------- Inmuebles ---------- */
   var VIVOS = ['Disponible', 'Reservado', 'En negociación'];
+  var limite = 20;
+  /* ---------- Búsqueda de inmuebles (1.2): entiende lo que se escribe y nunca esconde resultados ---------- */
+  var ZONAS_CALI = {
+    norte: 'santa monica,santa monica residencial,granada,juanambu,normandia,centenario,versalles,prados del norte,la flora,urbanizacion la flora,vipasa,chipichape,menga,altos de menga,la merced,el bosque,san vicente,los alamos,brisas de los alamos,la campina,alameda del rio,el sena,la rivera,floralia,villa del prado,el remanso,la isabela,los andes,el piloto,salomia,la esmeralda,torres de comfandi,ciudad los alamos,santa barbara,el paraiso',
+    oeste: 'el penon,san antonio,normandia,juanambu,santa teresita,arboleda,bellavista,santa rita,los cristales,cristales,aguacatal,el aguacatal,centenario,san cayetano,terron colorado,la legua,mortinal,el mortinal,altos de santa teresita,miraflores,tejares,los libertadores',
+    sur: 'ciudad jardin,pance,valle del lili,el ingenio,capri,ciudad capri,caney,bochalema,ciudad bochalema,el limonar,el gran limonar,mayapan,las vegas,el refugio,cuarto de legua,napoles,tequendama,el lido,san fernando,seminario,primero de mayo,melendez,quintas de don simon,canasgordas,los cambulos,la hacienda,santa anita,la cascada,ciudad pacifica,camino real,el jardin,champagnat,canaveralejo,el cedro,guadalupe,alferez real,santa isabel,la selva,ciudad universitaria,pampalinda,colseguros,nueva tequendama,el diamante,valle grande',
+    centro: 'san antonio,san pedro,san nicolas,el calvario,granada,san juan bosco,el porvenir,alameda,san cayetano,santa rosa,la merced,versalles,el penon,san bosco,sucre',
+    este: 'el poblado,mojica,los mangos,marroquin,ciudad cordoba,el vallado,alfonso lopez,andres sanin,la base,el troncal,villacolombia,el guabal,la independencia,san carlos'
+  };
+  var ZONA_DE = { norte: 'norte', sur: 'sur', oeste: 'oeste', occidente: 'oeste', centro: 'centro', este: 'este', oriente: 'este' };
+  var NUMW = { un: 1, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10 };
+  var TIPOS_Q = [[/\bapartaestudios?\b|\baparta estudios?\b|\bloft\b/, ['Apartaestudio']], [/\bapto?s?\b|\bapartamentos?\b|\bdepartamentos?\b/, ['Apartamento', 'Apartaestudio']], [/\bcasas?\b|\bcampestre\b/, ['Casa']], [/\blocal(es)?\b/, ['Local']], [/\boficinas?\b|\bconsultorios?\b/, ['Oficina']], [/\bbodegas?\b/, ['Bodega']], [/\blotes?\b|\bterrenos?\b/, ['Lote']]];
+  var VACIAS = /^(en|de|del|la|las|el|los|y|o|con|para|por|al|a|que|un|una|busco|buscar|necesito|quiero|hay|tiene|tengan|zona|sector|barrio|cali|inmuebles?|propiedad(es)?|precio|pesos|mes|mensual|mensuales|al|mas|menos|cerca|algo|tipo|m2|mts?|metros)$/;
+  function plataQ(num, unidad) {
+    var t = String(num), v;
+    if (/^\d{1,3}([.,]\d{3})+$/.test(t)) v = +t.replace(/[.,]/g, ''); else v = parseFloat(t.replace(',', '.'));
+    if (!isFinite(v)) return 0;
+    if (unidad || v < 100000) v = v * 1e6;
+    return Math.round(v);
+  }
+  function entenderQ(q) {
+    var s = ' ' + norm(q).replace(/\$/g, ' $ ').replace(/\s+/g, ' ') + ' ', o = { hab: 0, ban: 0, parq: 0, est: '', max: 0, min: 0, neg: '', tipos: null, zona: '', amo: '', mas: '', pal: [], dice: [] }, m;
+    s = s.replace(/\b(un|uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s+(?=(?:habitaci|alcob|cuarto|dormitori|bano|parqueader|garaj|carro))/g, function (w, n) { return NUMW[n] + ' '; });
+    var UN = '\\s*(m\\b|mm\\b|mill\\w*|millon\\w*|palos?|melones?)?';
+    var quita = function (re, f) { s = s.replace(re, function () { f.apply(null, arguments); return ' '; }); };
+    quita(/(\d+)\s*(?:\+\s*)?(?:habitaciones?|habitacion|habs?\b|h\b|alcobas?|cuartos?|dormitorios?)/, function (x, n) { o.hab = +n; });
+    quita(/(\d+)\s*(?:\+\s*)?banos?\b/, function (x, n) { o.ban = +n; });
+    quita(/(\d+)\s*(?:\+\s*)?(?:parqueaderos?|parq\w*|garajes?|carros?)/, function (x, n) { o.parq = +n; });
+    quita(/estrato\s*(\d)/, function (x, n) { o.est = n; });
+    quita(new RegExp('(?:entre|de)\\s*\\$?\\s*(\\d[\\d.,]*)' + UN + '\\s*(?:y|a|-)\\s*\\$?\\s*(\\d[\\d.,]*)' + UN), function (x, a, u1, b, u2) { o.min = plataQ(a, u1 || u2); o.max = plataQ(b, u2 || u1); });
+    quita(new RegExp('(?:hasta|maximo|max|menos de|tope|no mas de|<)\\s*\\$?\\s*(\\d[\\d.,]*)' + UN), function (x, a, u) { o.max = plataQ(a, u); });
+    quita(new RegExp('(?:desde|minimo|min|mas de|>)\\s*\\$?\\s*(\\d[\\d.,]*)' + UN), function (x, a, u) { o.min = plataQ(a, u); });
+    quita(new RegExp('\\$\\s*(\\d[\\d.,]*)' + UN + '|(\\d[\\d.,]*)\\s*(m\\b|mm\\b|mill\\w*|millon\\w*|palos?|melones?)'), function (x, a, u, b, u2) { o.max = Math.round(plataQ(a || b, u || u2) * 1.1); o.aprox = plataQ(a || b, u || u2); });
+    if (/\b(arriendo|arriendos|arrendar|arrienda|renta|rentar|alquiler|alquilar|canon)\b/.test(s)) o.neg = 'A';
+    if (/\b(venta|ventas|vender|vende|vendo|compra|comprar|compro)\b/.test(s)) o.neg = o.neg ? '' : 'V';
+    s = s.replace(/\b(arriendo|arriendos|arrendar|arrienda|renta|rentar|alquiler|alquilar|canon|venta|ventas|vender|vende|vendo|compra|comprar|compro)\b/g, ' ');
+    TIPOS_Q.forEach(function (t) { if (t[0].test(s)) { o.tipos = (o.tipos || []).concat(t[1]); s = s.replace(t[0], ' '); } });
+    quita(/\b(?:zona\s+)?(norte|sur|oeste|occidente|centro|este|oriente)\b/, function (x, z) { o.zona = ZONA_DE[z]; });
+    quita(/\b(amoblado|amoblada|amoblados|amueblado|amueblada|con muebles)\b/, function () { o.amo = 'Sí'; });
+    quita(/\b(sin amoblar|sin muebles|vacio)\b/, function () { o.amo = 'No'; });
+    quita(/\b(mascotas?|pet ?friendly|perro|gato)\b/, function () { o.mas = 'Sí'; });
+    o.pal = s.split(/\s+/).filter(function (w) { return w && !VACIAS.test(w) && w !== '$'; }).map(function (w) { return w.length > 4 ? w.replace(/(es|s)$/, '') : w; });
+    if (o.neg) o.dice.push(o.neg === 'A' ? 'arriendo' : 'venta');
+    if (o.tipos) o.dice.push(o.tipos[0] === 'Apartamento' ? 'apartamentos' : o.tipos.join(', ').toLowerCase());
+    if (o.zona) o.dice.push('zona ' + o.zona);
+    if (o.hab) o.dice.push(o.hab + '+ hab.'); if (o.ban) o.dice.push(o.ban + '+ baños'); if (o.parq) o.dice.push(o.parq + '+ parq.'); if (o.est) o.dice.push('estrato ' + o.est);
+    if (o.min && o.max) o.dice.push('entre ' + copM(o.min) + ' y ' + copM(o.max)); else if (o.aprox) o.dice.push('hasta unos ' + copM(o.max)); else if (o.max) o.dice.push('hasta ' + copM(o.max)); else if (o.min) o.dice.push('desde ' + copM(o.min));
+    if (o.amo) o.dice.push(o.amo === 'Sí' ? 'amoblado' : 'sin amoblar'); if (o.mas) o.dice.push('admite mascotas');
+    return o;
+  }
+  function buscable(i) {
+    return norm([i.c, ref(i.c), +ref(i.c), i.t, i.n, i.b, i.ci, i.org, i.og, i.q, i.emp, i.pro, i.edi, i.uni, i.dir, i.e, i.cap, i.amen, i.amo === 'Sí' ? 'amoblado' : '', i.cat && i.cat.x ? i.cat.x.join(' ') : '', i.cat && i.cat.z ? i.cat.z.join(' ') : '', i.obs].join(' '));
+  }
+  function precioPara(i, o) {
+    var a = esA(i) ? totalA(i) : 0, v = esV(i) ? i.pv : 0, ref2 = o.max || o.min;
+    if (o.neg === 'A') return a; if (o.neg === 'V') return v;
+    if (!ref2) return a || v;
+    return ref2 < 50e6 ? a : v;
+  }
   function filtrarInm(q, fi, fe) {
-    q = norm(q).trim();
-    var cod = (q.match(/\b(?:tly-?)?0*(\d{1,4})\b/) || [])[1], hab = (q.match(/(\d)\s*(?:hab|alc|habitaciones|alcobas)/) || [])[1];
-    var hm = q.match(/(?:hasta|max|maximo|menos de)\s*\$?\s*([\d.,]+)\s*(m|mill|millones|mm)?/), tope = 0;
-    if (hm) { tope = Number(hm[1].replace(/\./g, '').replace(',', '.')); if (tope < 100000) tope = tope * 1e6; }
-    var resto = q.replace(/(?:hasta|max|maximo|menos de)\s*\$?\s*[\d.,]+\s*(m|mill|millones|mm)?/, '').replace(/(\d)\s*(hab|alc)\w*/, '').trim();
-    var toks = resto.split(/\s+/).filter(function (t) { return t && !/^(en|de|la|el|y|apto|apartamento|para)$/.test(t); });
-    var soloCod = /^\s*(tly-?)?0*\d{1,4}\s*$/.test(q);
-    return (S.d.inmuebles || []).filter(function (i) {
-      if (soloCod && cod) return +ref(i.c) === +cod;
-      if (fe !== 'todos' && VIVOS.indexOf(i.e) < 0) return false;
+    var raw = String(q || '').trim(), l = (S.d && S.d.inmuebles) || [], hayQ = !!raw;
+    var base = l.filter(function (i) {
+      if (!hayQ && fe !== 'todos' && VIVOS.indexOf(i.e) < 0) return false;
       if (fi === 'Arriendo' && !esA(i)) return false;
       if (fi === 'Venta' && !esV(i)) return false;
       if (fi === 'Directos' && i.org !== 'Directo') return false;
       if (fi === 'Con aliado' && i.org !== 'Con aliado') return false;
-      if (hab && (i.h || 0) < +hab) return false;
-      if (tope) { var p = tope < 50e6 ? (esA(i) ? totalA(i) : 0) : (esV(i) ? i.pv : 0); if (!p || p > tope) return false; }
-      var hay = norm([i.c, ref(i.c), i.t, i.n, i.b, i.ci, i.org, i.q, i.emp, i.edi].join(' '));
-      return toks.every(function (t) { return hay.indexOf(t) > -1 || (/^\d+$/.test(t) && +t === +ref(i.c)); });
-    }).sort(function (a, b) { return (VIVOS.indexOf(a.e) < 0) - (VIVOS.indexOf(b.e) < 0) || (a.ord - b.ord) || (a.c < b.c ? 1 : -1); });
+      return true;
+    });
+    var ordenar = function (x) { return x.sort(function (a, b) { return (VIVOS.indexOf(a.e) < 0) - (VIVOS.indexOf(b.e) < 0) || (a.ord || 999) - (b.ord || 999) || (a.c < b.c ? 1 : -1); }); };
+    if (!hayQ) { var r0 = ordenar(base); r0.dice = []; return r0; }
+    var soloCod = raw.match(/^\s*(?:tly-?)?0*(\d{1,4})\s*$/i);
+    if (soloCod) { var rc = ordenar(base.filter(function (i) { return +ref(i.c) === +soloCod[1] || String(ref(i.c)).indexOf(soloCod[1]) > -1; })); rc.dice = ['número ' + soloCod[1]]; return rc; }
+    var o = entenderQ(raw);
+    var cumple = function (i) {
+      if (o.neg === 'A' && !esA(i)) return false;
+      if (o.neg === 'V' && !esV(i)) return false;
+      if (o.tipos && o.tipos.indexOf(i.t) < 0) return false;
+      if (o.zona && (ZONAS_CALI[o.zona] || '').split(',').indexOf(norm(i.b).trim()) < 0) return false;
+      if (o.hab && i.h && i.h < o.hab) return false;
+      if (o.ban && i.ba && i.ba < o.ban) return false;
+      if (o.parq && i.pq !== '' && i.pq != null && +i.pq < o.parq) return false;
+      if (o.est && i.es && String(i.es).indexOf(o.est) < 0) return false;
+      if (o.amo === 'Sí' && ['Sí', 'Opcional'].indexOf(i.amo) < 0 && buscable(i).indexOf('amoblad') < 0) return false;
+      if (o.amo === 'No' && i.amo === 'Sí') return false;
+      if (o.mas && i.mas === 'No') return false;
+      if (o.max || o.min) { var p = precioPara(i, o); if (!p) return false; if (o.max && p > o.max) return false; if (o.min && p < o.min) return false; }
+      return true;
+    };
+    var cand = base.filter(cumple), pal = o.pal;
+    var r = cand.filter(function (i) { var h = buscable(i); return pal.every(function (w) { return h.indexOf(w) > -1; }); });
+    r.dice = o.dice.slice(); if (pal.length) r.dice.push('“' + pal.join(' ') + '”');
+    if (!r.length && pal.length && cand.length) {
+      var pts = cand.map(function (i) { var h = buscable(i); return [i, pal.filter(function (w) { return h.indexOf(w) > -1; }).length]; }).filter(function (x) { return x[1] > 0; });
+      if (pts.length) { r = pts.sort(function (a, b) { return b[1] - a[1]; }).map(function (x) { return x[0]; }); r.dice = o.dice.concat(['“' + pal.join(' ') + '”']); r.parcial = true; return r; }
+      if (!o.dice.length) { r = []; r.dice = ['“' + pal.join(' ') + '”']; r.nada = true; return r; }
+      r = ordenar(cand); r.dice = o.dice; r.ignoro = pal.join(' '); return r;
+    }
+    ordenar(r);
+    if (o.aprox) r.sort(function (a, b) { return Math.abs(precioPara(a, o) - o.aprox) - Math.abs(precioPara(b, o) - o.aprox); });
+    return r;
   }
-  var limite = 20;
-  function pintarLista(mas) {
-    if (!mas) limite = 20;
-    var l = filtrarInm(S.q, S.fi, S.fe);
-    $('#cuenta').textContent = l.length + (l.length === 1 ? ' inmueble' : ' inmuebles') + (S.fe === 'todos' ? '' : ' disponibles');
-    $('#lista').innerHTML = l.length ? l.slice(0, limite).map(tarjeta).join('') + (l.length > limite ? '<button class="btn lin blk" data-mas-inm>Ver ' + Math.min(20, l.length - limite) + ' más</button>' : '')
-      : '<div class="vacio">No encontré inmuebles con eso. Prueba con el barrio, el número (0071) o quita un filtro.</div>';
+  function pintarLista() {
+    var l = filtrarInm(S.q, S.fi, S.fe), disp = l.filter(function (i) { return VIVOS.indexOf(i.e) > -1; }).length, hayQ = !!String(S.q || '').trim();
+    $('#cuenta').innerHTML = esc(l.length + (l.length === 1 ? ' inmueble' : ' inmuebles')) + (hayQ ? (l.length !== disp ? ' · ' + disp + ' disponibles' : '') : S.fe === 'todos' ? '' : ' disponibles') +
+      (hayQ && l.dice && l.dice.length ? '<span class="busq-nota" style="display:block">Busqué: <b>' + esc(l.dice.join(' · ')) + '</b>' + (l.parcial ? '. No hay ninguno con todo eso; te muestro los que más se parecen.' : '') + (l.ignoro ? '. No encontré “' + esc(l.ignoro) + '” en ninguno, así que no lo tuve en cuenta.' : '') + '</span>' : '') +
+      (!hayQ && S.fe !== 'todos' ? '<span class="busq-nota" style="display:block">Al buscar salen todos, también los pausados, arrendados y vendidos.</span>' : '');
+    $('#lista').innerHTML = l.length ? l.map(tarjeta).join('') : '<div class="vacio">No encontré ningún inmueble con “' + esc(String(S.q || '').trim()) + '”. Busca por el barrio, el número (0071), quién lo tiene, el edificio o algo como “apto oeste 3 hab hasta 6 M”.' + (S.fi !== 'Todos' ? ' También puedes quitar el filtro “' + esc(S.fi) + '”.' : '') + '</div>';
+  }
+  function listaNvInm() {
+    var l = filtrarInm(NV.qi, 'Todos', 'disp'), c = CM[NV.cli];
+    if (c && !NV.qi) l.sort(function (a, b) { return ((c.m || []).indexOf(b.c) > -1) - ((c.m || []).indexOf(a.c) > -1); });
+    $('#nvIn').innerHTML = l.map(function (i) { var sirve = c && (c.m || []).indexOf(i.c) > -1; return '<button class="opt" data-nv-inm="' + esc(i.c) + '">' + (fotoInm(i, 160) ? '<img src="' + fotoInm(i, 160) + '" alt="" loading="lazy" data-falla>' : '<span class="phm"></span>') + '<div><b>' + esc(i.c + ' · ' + (i.t || '') + ' en ' + (i.b || i.ci || '')) + '</b><span>' + (VIVOS.indexOf(i.e) < 0 ? esc(i.e) + ' · ' : '') + (sirve ? '✓ Le sirve · ' : '') + precioTxt(i).replace(/<[^>]+>/g, '') + ' · ' + esc(specs(i)) + (i.q ? ' · Lo tiene ' + esc(i.q) : '') + '</span></div></button>'; }).join('') || '<div class="vacio">No encontré ese inmueble. Prueba con el número o el barrio.</div>';
   }
 
   var fotosCache = {};
@@ -1083,7 +1298,7 @@ function mensajeComercial(i) {
   /* ---------- Clientes ---------- */
   function vClientes() {
     return '<div><p class="h1">Clientes</p><p class="sub">Qué buscan y en qué van</p>' +
-      '<label class="search">' + I.lupa + '<input id="cq" type="search" placeholder="Busca por nombre, celular o barrio" autocomplete="off"></label>' +
+      '<label class="search">' + I.lupa + '<input id="cq" type="search" placeholder="Nombre, celular o barrio" autocomplete="off"></label>' +
       '<div class="chips" role="group" aria-label="Filtros">' + [['activos', 'Activos'], ['escribir', 'Para escribir'], ['visitas', 'En visitas'], ['todos', 'Todos']].map(function (f) { return '<button class="chip" data-cf="' + f[0] + '" aria-pressed="' + (S.cf === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
       '<p class="cuenta" id="ccuenta"></p><div class="stack" id="clista" style="margin-top:10px"></div></div>';
   }
@@ -1285,11 +1500,6 @@ function mensajeComercial(i) {
       .filter(function (c) { return !q || norm(c.n + ' ' + c.w).indexOf(q) > -1; });
     if (NV.inm && !q) { var i = IM[NV.inm]; if (i && i.m && i.m.length) l.sort(function (a, b) { return (i.m.indexOf(b.c) > -1) - (i.m.indexOf(a.c) > -1); }); }
     $('#nvCl').innerHTML = l.slice(0, 30).map(function (c) { var sirve = NV.inm && IM[NV.inm] && (IM[NV.inm].m || []).indexOf(c.c) > -1; return '<button class="opt" data-nv-cli="' + esc(c.c) + '"><span class="av">' + esc(ini(c.n)) + '</span><div><b>' + esc(c.n) + '</b><span>' + (sirve ? '✓ Le sirve este inmueble · ' : '') + esc(buscaTxt(c)) + '</span></div></button>'; }).join('') || '<div class="vacio">No lo encuentro. Créalo desde Clientes o usa "Cliente de un colega".</div>';
-  }
-  function listaNvInm() {
-    var l = filtrarInm(NV.qi, 'Todos', 'disp'), c = CM[NV.cli];
-    if (c && !NV.qi) l.sort(function (a, b) { return ((c.m || []).indexOf(b.c) > -1) - ((c.m || []).indexOf(a.c) > -1); });
-    $('#nvIn').innerHTML = l.slice(0, 30).map(function (i) { var sirve = c && (c.m || []).indexOf(i.c) > -1; return '<button class="opt" data-nv-inm="' + esc(i.c) + '">' + (fotoInm(i, 160) ? '<img src="' + fotoInm(i, 160) + '" alt="" loading="lazy" data-falla>' : '<span class="phm"></span>') + '<div><b>' + esc(i.c + ' · ' + (i.b || i.t)) + '</b><span>' + (sirve ? '✓ Le sirve · ' : '') + precioTxt(i).replace(/<[^>]+>/g, '') + ' · ' + esc(specs(i)) + '</span></div></button>'; }).join('') || '<div class="vacio">No encontré ese inmueble.</div>';
   }
   function leerNueva() {
     $$('[data-nvf]').forEach(function (e) { NV.ops[+e.getAttribute('data-nvf')][0] = e.value; });
@@ -1639,11 +1849,11 @@ function mensajeComercial(i) {
       '<button class="btn osc chico" data-nuevo-inm>' + I.mas + 'Nuevo</button></div>' +
       '<div class="seg vista2" role="group" aria-label="Vista"><button data-vi="lista" aria-pressed="' + (S.vi !== 'quien') + '">Inmuebles</button><button data-vi="quien" aria-pressed="' + (S.vi === 'quien') + '">Quién los tiene</button></div>';
     if (S.vi === 'quien') {
-      return x + '<label class="search" style="margin-top:12px">' + I.lupa + '<input id="qq" type="search" placeholder="Busca por nombre, inmobiliaria o celular" autocomplete="off"></label>' +
+      return x + '<label class="search" style="margin-top:12px">' + I.lupa + '<input id="qq" type="search" placeholder="Nombre, inmobiliaria o celular" autocomplete="off"></label>' +
         '<div class="chips" role="group" aria-label="Filtros">' + [['todos', 'Todos'], ['directos', 'Propietarios'], ['aliados', 'Aliados'], ['sintel', 'Sin celular']].map(function (f) { return '<button class="chip" data-fq="' + f[0] + '" aria-pressed="' + ((S.fq || 'todos') === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
         '<p class="cuenta" id="qcuenta"></p><div class="stack" id="qlista" style="margin-top:10px"></div></div>';
     }
-    return x + '<label class="search" style="margin-top:12px">' + I.lupa + '<input id="q" type="search" placeholder="Ej: 0071 · Cristales 3 hab · hasta 6 M" autocomplete="off" enterkeyhint="search"></label>' +
+    return x + '<label class="search" style="margin-top:12px">' + I.lupa + '<input id="q" type="search" placeholder="Ej: Cristales 3 hab hasta 6 M" autocomplete="off" enterkeyhint="search"></label>' +
       '<div class="chips" role="group" aria-label="Filtros">' + ['Todos', 'Arriendo', 'Venta', 'Directos', 'Con aliado'].map(function (f) { return '<button class="chip" data-fi="' + f + '" aria-pressed="' + (S.fi === f) + '">' + f + '</button>'; }).join('') +
       '<button class="chip" data-fe="' + (S.fe === 'disp' ? 'todos' : 'disp') + '" aria-pressed="' + (S.fe === 'todos') + '">' + (S.fe === 'todos' ? 'Todos los estados' : 'Incluir no disponibles') + '</button></div>' +
       '<p class="cuenta" id="cuenta"></p><div class="stack" id="lista" style="margin-top:10px"></div></div>';
@@ -1922,7 +2132,7 @@ function mensajeComercial(i) {
 
   function paso1() {
     var L = (S.d && S.d.listas) || {}, t = V('Tipo de inmueble'), n = negF(), x = '';
-    if (FM.modo === 'nuevo') x += avisoHTML();
+    x += avisoHTML();
     x += bloque('¿Para qué es?', opc('Tipo de negocio', [['Arriendo', 'Arriendo'], ['Venta', 'Venta'], ['Venta y arriendo', 'Las dos']]));
     x += bloque('¿Qué es?', chs('Tipo de inmueble', L.tipos || ['Apartamento', 'Apartaestudio', 'Casa', 'Local', 'Oficina', 'Bodega', 'Lote']));
     x += bloque('¿Dónde está?', '<div class="grid2">' + selF('Ciudad', 'Ciudad', L.ciudades || ['Cali'], 'Elige') + txt('Barrio', 'Barrio', { list: 'dlBarrios', ph: 'Ej: Cristales' }) + '</div><datalist id="dlBarrios">' + (L.barrios || []).map(function (b) { return '<option value="' + esc(b) + '">'; }).join('') + '</datalist>');
@@ -1990,14 +2200,35 @@ function mensajeComercial(i) {
 
   /* Pegar link o mensaje del aviso */
   function avisoHTML() {
-    var a = FM.aviso, x = '<div class="avb"><b>¿Te pasaron un link o un mensaje?</b><span>Pégalo y lleno todo lo que encuentre: tipo, precio, área, habitaciones, barrio y las fotos.</span>' +
+    var a = FM.aviso, ed = FM.modo !== 'nuevo', x = '<div class="avb"><b>' + (ed ? '¿Tienes el mensaje del aliado o del propietario?' : '¿Te pasaron un link o un mensaje?') + '</b><span>' + (ed ? 'Pégalo y corrijo con él los datos de este inmueble. Revisa antes de guardar.' : 'Pégalo y lleno todo lo que encuentre: tipo, precio, área, habitaciones, barrio y las fotos.') + '</span>' +
       '<textarea id="avTxt" rows="3" placeholder="Link de Wasi, Finca Raíz, Domus… o el mensaje del aliado">' + esc(FM.avTxt || '') + '</textarea><button type="button" class="btn osc chico" data-fm-leer>Llenar</button>';
     if (a) {
-      x += '<div class="avres"><p>' + (a.n ? '<b>Listo: llené ' + a.n + (a.n === 1 ? ' dato' : ' datos') + '.</b> Revísalos abajo.' : '<b>No encontré datos claros.</b> Llénalo a mano.') + '</p>';
+      x += '<div class="avres"><p>' + (a.n ? '<b>Esto entendí:</b>' : '<b>No encontré datos claros.</b> Llénalo a mano.') + '</p>' + entendiHTML() + '<p class="chica" style="margin:0">Revísalo abajo y corrige lo que haga falta. El mensaje completo queda guardado en las notas internas.</p>';
       if (a.prep) x += '<p id="avFT">' + (a.fotos.length ? fotosAvTxt() : '<span class="spin" style="display:inline-block;width:14px;height:14px;border-width:2px;vertical-align:-2px;margin-right:6px"></span>Preparando ' + a.prep + ' fotos…') + '</p><div class="fotosav" id="avF">' + fotosAvGrid() + '</div>';
       x += '</div>';
     }
     return x + '</div>';
+  }
+  function entendiHTML() {
+    var d = FM.d, n = negF(), si = [], no = [], t = d['Tipo de inmueble'];
+    if (d['Tipo de negocio']) si.push(d['Tipo de negocio']); else no.push('arriendo o venta');
+    if (t) si.push(t); else no.push('tipo');
+    if (d['Barrio']) si.push(d['Barrio']); else no.push('barrio');
+    if (n.a) { if (d['Canon (sin administración)']) si.push('$' + d['Canon (sin administración)'] + ' al mes' + (d['Administración incluida'] === 'Sí' ? ' con administración' : d['Administración'] ? ' + adm. $' + d['Administración'] : '')); else no.push('canon'); }
+    if (n.v) { if (d['Precio de venta']) si.push('Venta $' + d['Precio de venta']); else no.push('precio de venta'); }
+    if (d['Área (m²)']) si.push(d['Área (m²)'] + ' m²'); else if (t !== 'Lote') no.push('área');
+    if (d['Habitaciones']) si.push(d['Habitaciones'] + ' hab.'); else if (CON_HAB.indexOf(t) > -1) no.push('habitaciones');
+    if (d['Baños totales']) si.push(d['Baños totales'] + ' baños');
+    if (d['Parqueaderos'] !== '' && d['Parqueaderos'] != null) si.push(d['Parqueaderos'] + ' parq.');
+    if (d['Piso']) si.push('Piso ' + d['Piso']);
+    if (d['Estrato']) si.push('Estrato ' + d['Estrato']);
+    if (d['Amoblado'] === 'Sí') si.push('Amoblado'); else if (d['Amoblado'] === 'No') si.push('Sin amoblar');
+    if (d['Admite mascotas'] === 'No') si.push('Sin mascotas'); else if (d['Admite mascotas'] === 'Sí') si.push('Admite mascotas');
+    if (d['Habitación de servicio'] === 'Sí') si.push('Alcoba de servicio'); else if (d['Habitación de servicio'] === 'No') si.push('Sin alcoba de servicio');
+    if (d['Depósito'] === 'Sí') si.push('Depósito');
+    if (d['Edificio o conjunto']) si.push(d['Edificio o conjunto']);
+    if (d['Amenidades']) si.push(d['Amenidades']);
+    return '<div class="entendi">' + si.map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div>' + (no.length ? '<p style="margin:0"><b style="color:var(--st-pend)">Falta:</b> ' + esc(no.join(', ')) + '.</p>' : '');
   }
   function fotosAvTxt() { var a = FM.aviso, n = Object.keys(a.sel).length; return '<b>' + n + ' de ' + a.fotos.length + ' fotos</b> se importan al crear (la primera queda de portada). Toca una para quitarla o ponerla.' + (a.fotos.some(function (f) { return f.recortada; }) ? ' Ya les quité las franjas blancas.' : ''); }
   function fotosAvGrid() { var a = FM.aviso; return a.fotos.map(function (f, k) { return '<button type="button" data-avf="' + k + '" aria-pressed="' + !!a.sel[k] + '"><img src="' + esc(f.prev) + '" alt="" referrerpolicy="no-referrer">' + (a.sel[k] ? '<i>' + (Object.keys(a.sel).map(Number).sort(function (x, y) { return x - y; }).indexOf(k) + 1) + '</i>' : '') + '</button>'; }).join(''); }
@@ -2009,6 +2240,8 @@ function mensajeComercial(i) {
     ['Ciudad', 'Barrio', 'Administración incluida', 'Área (m²)', 'Área de lote', 'Habitaciones', 'Baños totales', 'Parqueaderos', 'Estrato', 'Piso', 'Año de construcción', 'Edificio o conjunto', 'Ascensor', 'Balcones', 'Estudio o sala TV', 'Depósito', 'Habitación de servicio', 'Baño de servicio', 'Admite mascotas', 'Amenidades', 'Amoblado']
       .forEach(function (k) { var x = dd[k]; if (x === '' || x == null) return; FM.d[k] = typeof x === 'number' ? String(x).replace('.', ',') : String(x); n++; });
     MONEY.forEach(function (k) { if (dd[k]) { FM.d[k] = miles(dd[k]); n++; } });
+    var obs = (dd._notas || []).join(' ') + (dd._original ? (dd._notas && dd._notas.length ? '\n\n' : '') + 'Mensaje original:\n' + dd._original : '');
+    if (obs && String(V('Observaciones internas')).indexOf('Mensaje original') < 0) FM.d['Observaciones internas'] = (String(V('Observaciones internas')).trim() ? V('Observaciones internas') + '\n\n' : '') + obs;
     return n;
   }
   function leerAvisoForm(btn) {
@@ -2017,6 +2250,7 @@ function mensajeComercial(i) {
     var url = (tx.match(/https?:\/\/\S+/) || [''])[0], L = (S.d && S.d.listas) || {}, con = { barrios: L.barrios || [], ciudades: L.ciudades || [] };
     var listo = function (dd, fotos) {
       var n = aplicarAviso(dd); FM.sucio = true;
+      if (FM.modo !== 'nuevo') fotos = [];
       FM.aviso = { url: url, fotos: [], sel: {}, n: n, prep: fotos.length };
       if (url && !String(V('Observaciones internas')).trim()) FM.d['Observaciones internas'] = 'Aviso original: ' + url;
       pintarForm(true);
@@ -2030,12 +2264,14 @@ function mensajeComercial(i) {
         pintarFotosAv();
       });
     };
-    if (!url) { listo(TLYAV.leer(tx, con), []); return; }
+    if (!url) { listo(TLYMSG.leer(tx, con), []); return; }
     btn.disabled = true; btn.textContent = 'Leyendo el link…';
     api('aviso', { url: url }).then(function (a) {
       var fuente = [a.titulo, a.descripcion, tx.replace(url, ' ')].join('\n');
       var sp = function (s) { return TLYAV.nrm(s).replace(/\s+/g, ' '); }, ti = sp(a.titulo).slice(0, 24), pos = ti ? sp(a.texto).indexOf(ti) : -1, ventana = pos > -1 ? sp(a.texto).slice(pos, pos + 3000) : String(a.texto || '').slice(0, 4000);
-      var dd = Object.assign({}, TLYAV.leer(ventana, con), TLYAV.ld(a.ld), TLYAV.leer(fuente, con));
+      var propio = tx.replace(url, ' ').trim().length > 15 ? TLYMSG.leer(tx.replace(url, ' '), con) : {};
+      var dd = Object.assign({}, TLYAV.leer(ventana, con), TLYAV.ld(a.ld), TLYAV.leer(fuente, con), propio);
+      if (!propio._original) { delete dd._original; dd._notas = []; }
       if (dd['Tipo de negocio'] === 'Arriendo') delete dd['Precio de venta']; if (dd['Tipo de negocio'] === 'Venta') delete dd['Canon (sin administración)'];
       if (!dd['Ciudad'] && dd._ciudad) { var ci = (con.ciudades || []).filter(function (x) { return TLYAV.nrm(dd._ciudad).indexOf(TLYAV.nrm(x)) > -1; })[0]; if (ci) dd['Ciudad'] = ci; }
       listo(dd, TLYAV.fotosUnicas(a.imagenes || []));
@@ -2282,8 +2518,9 @@ function mensajeComercial(i) {
       x += '</div>';
       x += '<div class="grid2"><div class="campo"><label for="ciV">' + (CI.op === 'Venta' ? 'Precio final' : 'Canon final') + '</label><input class="inp num" id="ciV" inputmode="numeric" value="' + esc(CI.valor ? '$ ' + CI.valor : '') + '" data-ci-m></div><div class="campo"><label for="ciF">Fecha</label><input class="inp" id="ciF" type="date" value="' + esc(CI.fecha || hoyISO()) + '"></div></div>';
       x += '<div class="campo"><label for="ciB">Comisión total</label><input class="inp num" id="ciB" inputmode="numeric" value="' + esc(CI.bruta ? '$ ' + CI.bruta : '') + '" data-ci-m data-ci-b><div class="hint">Calculada con la regla del inmueble. Cámbiala si se negoció otra.</div></div>';
-      x += '<div class="grid2"><div class="campo"><label for="ciA">Se comparte con</label><input class="inp" id="ciA" value="' + esc(CI.aliado || '') + '" placeholder="Nadie"></div><div class="campo"><label for="ciR">' + (CI.tr === 'Valor fijo' ? 'Le corresponde' : '% para el aliado') + '</label><input class="inp num" id="ciR" inputmode="decimal" value="' + esc(CI.rep || '') + '" placeholder="' + (CI.tr === 'Valor fijo' ? '$ 0' : '50') + '"></div></div>';
-      x += '<div class="campo"><label for="ciC">¿Quién lo consiguió?</label><select class="inp" id="ciC"><option value="">Nadie en especial</option>' + ((S.d && S.d.eq) || []).map(function (n) { return '<option' + (n === CI.cap ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></div>';
+      x += '<div class="campo"><label for="ciA">Se comparte con</label><input class="inp" id="ciA" value="' + esc(CI.aliado || '') + '" placeholder="Nadie (déjalo vacío)"></div>';
+      x += '<div class="grid2"><div class="campo"><label for="ciR">' + (CI.tr === 'Valor fijo' ? 'Le corresponde' : '% para el aliado') + '</label><input class="inp num" id="ciR" inputmode="decimal" value="' + esc(CI.rep || '') + '" placeholder="' + (CI.tr === 'Valor fijo' ? '$ 0' : '50') + '"></div>';
+      x += '<div class="campo"><label for="ciC">Lo consiguió</label><select class="inp" id="ciC"><option value="">Nadie</option>' + ((S.d && S.d.eq) || []).map(function (n) { return '<option' + (n === CI.cap ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></div></div>';
       x += '<div class="campo"><label for="ciN">Notas</label><input class="inp" id="ciN" value="' + esc(CI.notas || '') + '"></div>';
       x += '<div class="calc" id="ciCalc">' + calcCierre() + '</div><button class="btn pri blk" style="margin-top:12px" data-ci-guardar>' + I.check + 'Registrar cierre</button>';
     }
