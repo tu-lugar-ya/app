@@ -523,6 +523,55 @@ a.btn, a.circ { text-decoration: none; }
   .cli > .av { grid-row: span 2; align-self: center; }
   .cli > .pill, .cli > span:not(.av):last-child { grid-column: 2; justify-self: start; }
 }
+
+/* 1.4 · Inventario */
+.vista2 button { padding: 8px 6px; line-height: 1.2; min-width: 0; }
+.ivres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+.ivres button { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; text-align: left; display: grid; gap: 2px; min-width: 0; }
+.ivres b { font-size: 24px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.ivres span { font-size: 12px; color: var(--muted); font-weight: 600; line-height: 1.25; }
+.ivres button[aria-pressed="true"] { background: var(--btn); border-color: var(--btn); }
+.ivres button[aria-pressed="true"] b { color: var(--aqua); }
+.ivres button[aria-pressed="true"] span { color: #CFE3DE; }
+.chip .cn { font-weight: 700; opacity: .6; margin-left: 2px; }
+.ivl { display: grid; gap: 8px; }
+.iv { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 12px; align-items: start; width: 100%; text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px; }
+.iv .th { width: 84px; height: 84px; border-radius: 12px; overflow: hidden; background: var(--menta); display: block; }
+.iv .th img, .iv .th .ph0 { width: 100%; height: 100%; object-fit: cover; display: block; }
+.iv .th .ph0 svg { width: 26px; height: 26px; }
+.iv .tx { display: grid; gap: 2px; min-width: 0; }
+.iv .cd { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--muted); }
+.iv .nm { font-size: 15px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.iv .nm small { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.iv .pr { font-size: 15px; font-weight: 800; color: var(--st-conf); line-height: 1.3; }
+.iv .pr small { font-size: 12px; font-weight: 600; color: var(--muted); }
+.iv .sp { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+.iv .iv-q { font-size: 12.5px; color: var(--muted); line-height: 1.35; overflow-wrap: anywhere; }
+.iv .iv-q b { color: var(--ink); font-weight: 700; }
+.iv .iv-q .fq { color: var(--st-pend); font-weight: 700; }
+.iv .iv-q .sv { color: var(--st-conf); font-weight: 700; }
+.iv .tg { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.iv-t { font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 7px; background: var(--menta); color: var(--ink); line-height: 1.3; }
+.iv-t.nv { background: var(--btn); color: var(--aqua); }
+.iv-t.di { background: var(--st-asis-bg); color: var(--st-asis); }
+.iv-t.es { background: var(--st-pend-bg); color: var(--st-pend); }
+.iv-t.np { background: var(--st-can-bg); color: var(--st-can); }
+.ivno { margin-top: 24px; }
+.ivno summary { list-style: none; cursor: pointer; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; font-size: 14px; font-weight: 700; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; }
+.ivno summary::-webkit-details-marker { display: none; }
+.ivno summary::after { content: "Ver"; grid-row: 1 / span 2; grid-column: 2; align-self: center; color: var(--st-conf); font-size: 13.5px; }
+.ivno[open] summary::after { content: "Ocultar"; }
+.ivno summary .a { grid-column: 1; }
+.ivno summary .b { grid-column: 1; font-size: 12.5px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+.ivno[open] summary { margin-bottom: 8px; }
+.ivno .iv { opacity: .82; }
+@media (max-width: 360px) {
+  .iv { grid-template-columns: 68px minmax(0, 1fr); gap: 10px; }
+  .iv .th { width: 68px; height: 68px; }
+  .ivres b { font-size: 21px; }
+  .ivres button { padding: 9px 10px; }
+  .vista2 button { font-size: 12.5px; padding: 8px 4px; }
+}
 </style>
 </head>
 <body>
@@ -842,7 +891,7 @@ window.TLYMSG = (function () {
   'use strict';
   var API = 'https://script.google.com/macros/s/AKfycbzbWblnXZ2ktqn1q3sylaNDP34ovmmSygImlA0E185h29N55IpgJ_PE_Pv7G8CcUJeV/exec';
   var SITIO = 'https://tu-lugar-ya.github.io/';
-  var VERSION = '1.3 · 10 nov 2026';
+  var VERSION = '1.4 · 11 nov 2026';
   var DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], DIASL = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   var ACTIVAS = ['Por confirmar', 'Confirmada', 'Reprogramada'];
@@ -916,7 +965,7 @@ window.TLYMSG = (function () {
   /* ---------- Estado ---------- */
   var S = {
     token: ls.get('tly_app_t') || '', correo: ls.get('tly_app_c') || '', d: null, tab: 'hoy', dia: hoyISO(), cal: 'semana',
-    fi: 'Todos', fe: 'disp', q: '', vi: 'lista', fq: 'todos', qq: '', ficha: null, cf: 'activos', cq: '', ultima: 0, cargando: false
+    fi: 'Todos', fe: 'disp', q: '', vi: 'lista', fq: 'todos', qq: '', ivt: 'todo', ivn: '', ficha: null, cf: 'activos', cq: '', ultima: 0, cargando: false
   };
   var IM = {}, CM = {};
   function indexar() {
@@ -1074,7 +1123,7 @@ window.TLYMSG = (function () {
     v.setAttribute('data-v', clave);
     if (!misma && v.firstElementChild) { v.firstElementChild.classList.add('fade'); v.scrollTop = 0; } else v.scrollTop = top;
     if (S.tab === 'inmuebles' && !S.ficha && !S.avisos && S.vi === 'quien') { var qq = $('#qq'); qq.value = S.qq || ''; qq.addEventListener('input', function () { S.qq = qq.value; pintarQuien(); }); pintarQuien(); }
-    else if (S.tab === 'inmuebles' && !S.ficha && !S.avisos) { var q = $('#q'); q.value = S.q; q.addEventListener('input', function () { S.q = q.value; pintarLista(); }); pintarLista(); }
+    else if (S.tab === 'inmuebles' && !S.ficha && !S.avisos && S.vi !== 'inv') { var q = $('#q'); q.value = S.q; q.addEventListener('input', function () { S.q = q.value; pintarLista(); }); pintarLista(); }
     if (S.tab === 'clientes' && !S.avisos) { var c = $('#cq'); c.value = S.cq; c.addEventListener('input', function () { S.cq = c.value; pintarClientes(); }); pintarClientes(); }
     if (S.tab === 'inmuebles' && S.ficha && !S.avisos) cargarFotosFicha(IM[S.ficha]);
   }
@@ -1127,7 +1176,7 @@ window.TLYMSG = (function () {
     x += '<div id="sec-esc"></div><div class="sec"><h3>Clientes para escribir</h3><button data-ir="clientes" data-cf="escribir">Todos</button></div>';
     x += esc2.length ? '<div class="stack">' + esc2.slice(0, 5).map(leadHTML).join('') + '</div>' : '<div class="vacio">Estás al día con los clientes.</div>';
     var nuevos = (S.d.inmuebles || []).filter(function (i) { return i.fc && i.fc >= sumar(h, -10) && ['Disponible', 'Reservado'].indexOf(i.e) > -1; }).sort(function (a, b) { return a.fc < b.fc ? 1 : -1; }).slice(0, 8);
-    if (nuevos.length) x += '<div class="sec"><h3>Nuevos en el inventario</h3><button data-ir="inmuebles">Ver todos</button></div><div class="mini">' + nuevos.map(function (i) {
+    if (nuevos.length) x += '<div class="sec"><h3>Nuevos en el inventario</h3><button data-ir="inmuebles" data-ir-vi="inv">Ver todos</button></div><div class="mini">' + nuevos.map(function (i) {
       return '<button data-ficha="' + esc(i.c) + '"><div class="im">' + imgTag(i, 480) + '</div><div class="tx"><b class="num">' + precioTxt(i) + '</b><span>' + esc(i.c + ' · ' + (i.b || i.t)) + '</span>' + (i.m && i.m.length ? '<span style="color:var(--st-conf);font-weight:700">Le sirve a ' + i.m.length + (i.m.length === 1 ? ' cliente' : ' clientes') + '</span>' : '') + '</div></button>';
     }).join('') + '</div>';
     return x + '</div>';
@@ -1845,9 +1894,10 @@ window.TLYMSG = (function () {
 
   /* ---------- Inmuebles: lista, quién los tiene y ficha ---------- */
   function vInmuebles() {
-    var x = '<div><div class="hrow"><div><p class="h1">Inmuebles</p><p class="sub">' + (S.vi === 'quien' ? 'Quién tiene cada inmueble y cómo contactarlo' : 'Busca por número, barrio, habitaciones o precio') + '</p></div>' +
+    var x = '<div><div class="hrow"><div><p class="h1">Inmuebles</p><p class="sub">' + (S.vi === 'quien' ? 'Quién tiene cada inmueble y cómo contactarlo' : S.vi === 'inv' ? 'Todo lo que tenemos, lo más nuevo primero. Solo lo ven ustedes.' : 'Busca por número, barrio, habitaciones o precio') + '</p></div>' +
       '<button class="btn osc chico" data-nuevo-inm>' + I.mas + 'Nuevo</button></div>' +
-      '<div class="seg vista2" role="group" aria-label="Vista"><button data-vi="lista" aria-pressed="' + (S.vi !== 'quien') + '">Inmuebles</button><button data-vi="quien" aria-pressed="' + (S.vi === 'quien') + '">Quién los tiene</button></div>';
+      '<div class="seg vista2" role="group" aria-label="Vista"><button data-vi="lista" aria-pressed="' + (S.vi !== 'quien' && S.vi !== 'inv') + '">Buscar</button><button data-vi="inv" aria-pressed="' + (S.vi === 'inv') + '">Inventario</button><button data-vi="quien" aria-pressed="' + (S.vi === 'quien') + '">Quién los tiene</button></div>';
+    if (S.vi === 'inv') return x + vInventario() + '</div>';
     if (S.vi === 'quien') {
       return x + '<label class="search" style="margin-top:12px">' + I.lupa + '<input id="qq" type="search" placeholder="Nombre, inmobiliaria o celular" autocomplete="off"></label>' +
         '<div class="chips" role="group" aria-label="Filtros">' + [['todos', 'Todos'], ['directos', 'Propietarios'], ['aliados', 'Aliados'], ['sintel', 'Sin celular']].map(function (f) { return '<button class="chip" data-fq="' + f[0] + '" aria-pressed="' + ((S.fq || 'todos') === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
@@ -2602,6 +2652,73 @@ window.TLYMSG = (function () {
     if (/Barrio|Precio|Canon|Habitaciones|Tipo/.test(k2)) { var db = $('#dupBox'); if (db) db.innerHTML = dupHTML(); }
   }
 
+  /* ---------- Inventario (1.4): todo lo que tenemos, lo más nuevo primero. Solo interno ---------- */
+  var INV_T = [['todo', 'Todo'], ['aptos', 'Aptos'], ['casas', 'Casas'], ['com', 'Locales y bodegas'], ['lotes', 'Lotes']];
+  function invGrupo(t) { return t === 'Apartamento' || t === 'Apartaestudio' ? 'aptos' : t === 'Casa' ? 'casas' : t === 'Lote' ? 'lotes' : 'com'; }
+  function invNeg(i) { return !S.ivn || (S.ivn === 'A' ? esA(i) : esV(i)); }
+  function invTipo(i) { return !S.ivt || S.ivt === 'todo' || invGrupo(i.t) === S.ivt; }
+  function invOrden(a, b) { var x = a.fc || '', y = b.fc || ''; return x !== y ? (x < y ? 1 : -1) : (a.c < b.c ? 1 : -1); }
+  function invHace(fc) {
+    var d = diasDesde(fc);
+    return d == null ? '' : d <= 0 ? 'hoy' : d === 1 ? 'ayer' : 'hace ' + d + ' días';
+  }
+  function invPrecio(i) {
+    var l = [];
+    if (esA(i) && i.pc) l.push(copM(i.pc) + ' <small>/mes' + (i.ai === 'Sí' ? ' con adm.' : '') + '</small>');
+    if (esV(i) && i.pv) l.push(copM(i.pv) + ' <small>venta</small>');
+    return l.join(' <small>·</small> ') || '<small>Sin precio</small>';
+  }
+  function invFila(i, nuevo) {
+    var tags = [];
+    if (nuevo) tags.push('<span class="iv-t nv">Nuevo · ' + esc(invHace(i.fc)) + '</span>');
+    if (i.e && i.e !== 'Disponible') tags.push('<span class="iv-t es">' + esc(i.e) + '</span>');
+    if (i.org) tags.push('<span class="iv-t' + (i.org === 'Directo' ? ' di' : '') + '">' + (i.org === 'Directo' ? 'Directo' : 'Aliado') + '</span>');
+    if (!i.pub && VIVOS.indexOf(i.e) > -1) tags.push('<span class="iv-t np">No sale en el catálogo</span>');
+    var quien = i.q ? 'Lo tiene <b>' + esc(i.q) + '</b>' : '<span class="fq">Falta quién lo tiene</span>';
+    var sirve = i.m && i.m.length ? ' · <span class="sv">le sirve a ' + i.m.length + (i.m.length === 1 ? ' cliente' : ' clientes') + '</span>' : '';
+    return '<button class="iv" data-ficha="' + esc(i.c) + '"><span class="th">' + imgTag(i, 240) + '</span><span class="tx">' +
+      '<span class="cd">' + esc(i.c) + '</span>' +
+      '<b class="nm">' + esc(i.t || 'Inmueble') + (i.b ? ' · ' + esc(i.b) : '') + (i.ci && i.ci !== 'Cali' ? ' <small>(' + esc(i.ci) + ')</small>' : '') + '</b>' +
+      '<span class="pr num">' + invPrecio(i) + '</span>' +
+      (specs(i) ? '<span class="sp">' + esc(specs(i)) + '</span>' : '') +
+      '<span class="iv-q">' + quien + sirve + '</span>' +
+      (tags.length ? '<span class="tg">' + tags.join('') + '</span>' : '') +
+      '</span></button>';
+  }
+  function invMes(fc) {
+    if (!fc) return 'Sin fecha de ingreso';
+    var h = hoyISO(), d = fecha(fc), m = MESES[d.getMonth()];
+    if (fc.slice(0, 7) === h.slice(0, 7)) return 'Antes, en ' + m;
+    return m.charAt(0).toUpperCase() + m.slice(1) + (fc.slice(0, 4) !== h.slice(0, 4) ? ' de ' + fc.slice(0, 4) : '');
+  }
+  function vInventario() {
+    var todos = (S.d && S.d.inmuebles) || [], lim = sumar(hoyISO(), -7);
+    var vivos = todos.filter(function (i) { return VIVOS.indexOf(i.e) > -1; });
+    var cuenta = function (l, f) { return l.filter(f).length; };
+    var x = '<div class="ivres" role="group" aria-label="Negocio">' + [['', 'Disponibles', function () { return true; }], ['A', 'En arriendo', esA], ['V', 'En venta', esV]].map(function (o) {
+      return '<button data-ivn="' + o[0] + '" aria-pressed="' + ((S.ivn || '') === o[0]) + '"><b class="num">' + cuenta(vivos.filter(invTipo), o[2]) + '</b><span>' + o[1] + '</span></button>';
+    }).join('') + '</div>';
+    var paraT = vivos.filter(invNeg);
+    x += '<div class="chips" role="group" aria-label="Tipo">' + INV_T.map(function (t) {
+      var n = t[0] === 'todo' ? paraT.length : cuenta(paraT, function (i) { return invGrupo(i.t) === t[0]; });
+      if (!n && t[0] !== 'todo' && (S.ivt || 'todo') !== t[0]) return '';
+      return '<button class="chip" data-ivt="' + t[0] + '" aria-pressed="' + ((S.ivt || 'todo') === t[0]) + '">' + t[1] + ' <span class="cn">' + n + '</span></button>';
+    }).join('') + '</div>';
+    var l = vivos.filter(function (i) { return invNeg(i) && invTipo(i); }).sort(invOrden);
+    var nuevos = l.filter(function (i) { return i.fc && i.fc >= lim; }), resto = l.filter(function (i) { return !(i.fc && i.fc >= lim); });
+    if (!l.length) x += '<div class="vacio" style="margin-top:14px">No hay inmuebles disponibles con este filtro.</div>';
+    else {
+      x += '<div class="sec"><h3>Nuevos · últimos 7 días <b>' + nuevos.length + '</b></h3></div>' +
+        (nuevos.length ? '<div class="ivl">' + nuevos.map(function (i) { return invFila(i, true); }).join('') + '</div>' : '<div class="vacio">No entró nada nuevo esta semana' + ((S.ivt && S.ivt !== 'todo') || S.ivn ? ' con este filtro' : '') + '.</div>');
+      var grupos = [], gi = {};
+      resto.forEach(function (i) { var k = invMes(i.fc); if (!(k in gi)) { gi[k] = grupos.length; grupos.push([k, []]); } grupos[gi[k]][1].push(i); });
+      grupos.forEach(function (g) { x += '<div class="sec"><h3>' + esc(g[0]) + ' <b>' + g[1].length + '</b></h3></div><div class="ivl">' + g[1].map(function (i) { return invFila(i, false); }).join('') + '</div>'; });
+    }
+    var otros = todos.filter(function (i) { return VIVOS.indexOf(i.e) < 0 && invNeg(i) && invTipo(i); }).sort(invOrden);
+    if (otros.length) x += '<details class="ivno"' + (S.ivno ? ' open' : '') + '><summary><span class="a">No disponibles <b>' + otros.length + '</b></span><span class="b">Pausados, arrendados y vendidos</span></summary><div class="ivl">' + otros.map(function (i) { return invFila(i, false); }).join('') + '</div></details>';
+    return x;
+  }
+
   /* ---------- Eventos ---------- */
   document.addEventListener('click', function (e) {
     var b = e.target.closest('button, a[data-x]'); if (!b || b.closest('#login')) return;
@@ -2611,6 +2728,8 @@ window.TLYMSG = (function () {
     if (has('data-nuevo-inm')) { abrirForm('nuevo'); return; }
     if (has('data-fm-editar')) { var fe2 = a('data-fm-editar').split(':'); abrirForm('editar', fe2[0], +fe2[1] || 1); return; }
     if (has('data-vi')) { S.vi = a('data-vi'); render(); return; }
+    if (has('data-ivn')) { S.ivn = a('data-ivn'); pintarSoloVista(); return; }
+    if (has('data-ivt')) { S.ivt = a('data-ivt'); pintarSoloVista(); return; }
     if (has('data-fq')) { S.fq = a('data-fq'); $$('[data-fq]').forEach(function (z) { z.setAttribute('aria-pressed', z === b); }); pintarQuien(); return; }
     if (has('data-siguen')) { hojaSiguen(a('data-siguen')); return; }
     if (has('data-sg-si')) {
@@ -2671,7 +2790,7 @@ window.TLYMSG = (function () {
     if (b.id === 'btnAct' || has('data-actualizar')) { cerrarHoja(); actualizar(true); return; }
     if (has('data-salir')) { cerrarSesion(false); return; }
     if (has('data-cerrar-inst')) { ls.set('tly_app_inst', '1'); render(); return; }
-    if (has('data-ir')) { if (has('data-cf')) S.cf = a('data-cf'); ir(a('data-ir')); return; }
+    if (has('data-ir')) { if (has('data-cf')) S.cf = a('data-cf'); if (has('data-ir-vi')) S.vi = a('data-ir-vi'); ir(a('data-ir')); return; }
     if (has('data-scroll')) { var el = $('#' + a('data-scroll')); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     if (has('data-go')) { var g = a('data-go').split(':'); S.avisos = false; render(); if (g[0] === 'v') hojaVisita(g[1]); else hojaCliente(g[1]); return; }
     if (has('data-visita')) { hojaVisita(a('data-visita')); return; }
@@ -2682,8 +2801,8 @@ window.TLYMSG = (function () {
     if (has('data-fe')) { S.fe = a('data-fe'); render(); return; }
     if (has('data-cf')) { S.cf = a('data-cf'); render(); return; }
     if (has('data-mas-inm')) { limite += 20; pintarLista(true); return; }
-    if (has('data-ficha')) { S.ficha = a('data-ficha'); S.tab = 'inmuebles'; S.avisos = false; cerrarHoja(); render(); return; }
-    if (has('data-cerrar-ficha')) { S.ficha = null; render(); return; }
+    if (has('data-ficha')) { var enLista = S.tab === 'inmuebles' && !S.ficha && !S.avisos; S.topL = enLista ? $('#vista').scrollTop : 0; S.ivno = enLista && !!$('.ivno[open]'); S.ficha = a('data-ficha'); S.tab = 'inmuebles'; S.avisos = false; cerrarHoja(); render(); return; }
+    if (has('data-cerrar-ficha')) { S.ficha = null; render(); if (S.topL) $('#vista').scrollTop = S.topL; return; }
     if (has('data-compartir')) { hojaCompartir(a('data-compartir')); return; }
     if (has('data-modo')) { hojaCompartir(COMP, a('data-modo')); return; }
     if (has('data-nueva-inm')) { hojaNueva({ inm: a('data-nueva-inm') }); return; }
