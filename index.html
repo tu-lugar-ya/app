@@ -260,6 +260,7 @@ a.btn, a.circ { text-decoration: none; }
 .hoja .in { overflow-y: auto; padding: 4px var(--gr) calc(var(--bot) + 24px) var(--gl); -webkit-overflow-scrolling: touch; }
 .hoja h2 { font-size: 21px; font-weight: 800; letter-spacing: -.02em; margin: 4px 44px 4px 0; }
 .hoja .lede { color: var(--muted); font-size: 14px; margin: 0 0 14px; line-height: 1.45; }
+.hoja .fijo-abajo { position: sticky; bottom: calc(-1 * (var(--bot) + 24px)); z-index: 2; background: var(--bg); padding: 10px 0 calc(var(--bot) + 30px); margin: 10px 0 calc(-1 * (var(--bot) + 24px)); box-shadow: 0 -12px 14px -12px rgba(0, 0, 0, .25); }
 .campo { display: grid; gap: 6px; margin-bottom: 14px; }
 .campo > label, .campo > .lab { font-size: 12.5px; font-weight: 700; color: var(--muted); letter-spacing: .02em; }
 .inp, textarea, select.inp { width: 100%; border: 1px solid var(--line); border-radius: 12px; background: var(--card); padding: 11px 12px; outline: 0; resize: vertical; min-height: 46px; }
@@ -903,7 +904,7 @@ window.TLYMSG = (function () {
   'use strict';
   var API = 'https://script.google.com/macros/s/AKfycbzbWblnXZ2ktqn1q3sylaNDP34ovmmSygImlA0E185h29N55IpgJ_PE_Pv7G8CcUJeV/exec';
   var SITIO = 'https://tu-lugar-ya.github.io/';
-  var VERSION = '1.5 · 18 nov 2026';
+  var VERSION = '1.6 · 18 nov 2026';
   var DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], DIASL = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   var ACTIVAS = ['Por confirmar', 'Confirmada', 'Reprogramada'];
@@ -1031,7 +1032,9 @@ window.TLYMSG = (function () {
   var empezo = function (v) { var h = hoyISO(); return v.f < h || (v.f === h && v.h && v.h <= ahoraHM()); };
   var porCerrar = function (v) { if (ACTIVAS.indexOf(v.e) < 0) return false; var h = hoyISO(); return v.f < h || (v.f === h && masMin(v.h, 30) <= ahoraHM()); };
   var pill = function (st) { return '<span class="pill p-' + CLS[st] + '">' + esc(st) + '</span>'; };
-  function quienMuestra(v) { return v.m ? (v.m === 'Colega' ? 'el colega' : corto(v.m)) : ''; }
+  function quienesVan(v) { return String(v.m || '').split(/\s*,\s*/).filter(Boolean); }
+  function quienMuestra(v) { return quienesVan(v).map(function (x) { return x === 'Colega' ? 'el colega' : corto(x); }).join(' y '); }
+  function quienTxt(v) { var q = quienMuestra(v); return q ? (quienesVan(v).length > 1 ? ' · van ' : ' · muestra ') + q : ''; }
 
   function fotoInm(i, w) {
     if (!i) return '';
@@ -1145,7 +1148,7 @@ window.TLYMSG = (function () {
   function vrow(v, marca) {
     var i = IM[v.i];
     return '<button class="vrow l-' + CLS[v.e] + '" data-visita="' + esc(v.id) + '"><div class="t num">' + esc(h12(v.h)).replace(' ', '<small>') + '</small></div>' +
-      '<div class="m"><b>' + esc(v.cl) + '</b><span>' + esc(v.i) + ' · ' + esc(v.b || (i && i.b) || '') + (quienMuestra(v) ? ' · muestra ' + esc(quienMuestra(v)) : '') + '</span></div>' +
+      '<div class="m"><b>' + esc(v.cl) + '</b><span>' + esc(v.i) + ' · ' + esc(v.b || (i && i.b) || '') + esc(quienTxt(v)) + '</span></div>' +
       (marca ? '<span class="pill p-pend">' + marca + '</span>' : pill(v.e)) + '</button>';
   }
   function vrowDia(v, marca) {
@@ -1176,7 +1179,7 @@ window.TLYMSG = (function () {
     if (prox) {
       var i = IM[prox.i];
       x += '<div class="sec"><h3>Próxima visita</h3></div><div class="next"><div class="ph">' + imgTag(i, 900) + pill(prox.e) +
-        '<div class="when"><b class="num">' + esc(h12(prox.h)) + '</b><span>' + esc(diaRel(prox.f)) + (quienMuestra(prox) ? ' · muestra ' + esc(quienMuestra(prox)) : '') + '</span></div></div>' +
+        '<div class="when"><b class="num">' + esc(h12(prox.h)) + '</b><span>' + esc(diaRel(prox.f)) + esc(quienTxt(prox)) + '</span></div></div>' +
         '<div class="bd"><div><b>' + esc(prox.cl) + '</b><small>' + esc(prox.i) + ' · ' + esc(nombreInm(i) || prox.b) + '</small></div>' +
         '<div class="dos">' + (prox.e === 'Confirmada' ? '<button class="btn pri" data-wa-visita="' + esc(prox.id) + ':recordar">' + I.wa + 'Recordarle</button>' : '<button class="btn pri" data-wa-visita="' + esc(prox.id) + ':pedir">' + I.wa + 'Pedir confirmación</button>') +
         '<button class="btn gh" data-visita="' + esc(prox.id) + '">Ver visita</button></div></div></div>';
@@ -1207,19 +1210,67 @@ window.TLYMSG = (function () {
     if (!sc.length && !vs.length) al.push('<div class="emb-al ok"><b class="num">✓</b><span>Todos los que escribieron tienen respuesta y no hay visitas sin cerrar.</span></div>');
     return x + '<div class="emb-als">' + al.join('') + '</div>';
   }
-  function msgCliente(c) {
-    var yo = S.d && S.d.yo ? corto(S.d.yo.nombre) : '', n = corto(c.n);
-    if (!c.lw) return 'Hola ' + n + ', ¿cómo vas?';
-    var cods = String(c.iw || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean), cod = cods[cods.length - 1], im = cod ? IM[cod] : null;
-    var hola = 'Hola ' + n + ', te saluda ' + (yo || 'el equipo') + ' de Tu Lugar Ya. ';
-    if (im) return hola + 'Vi que te interesó el ' + String(im.t || 'inmueble').toLowerCase() + (im.b ? ' en ' + im.b : '') + ' (' + cod + '). ¿Sigues buscando? Si quieres coordinamos una visita esta semana o te mando opciones parecidas. https://tu-lugar-ya.github.io/i/' + cod + '/?o=wa';
-    return hola + 'Recibimos tu mensaje desde nuestra página. Cuéntame qué buscas (arriendo o compra, zona y presupuesto) y te mando opciones que te sirvan.';
+  function artInm(i) { return /^(Casa|Oficina|Bodega|Finca)/.test(i.t || '') ? 'la' : 'el'; }
+  function precioMsg(i, neg) {
+    if (neg !== 'V' && esA(i) && i.pc) return cop(i.pc) + ' al mes' + (i.ai === 'Sí' ? ' con administración' : '');
+    if (esV(i) && i.pv) return cop(i.pv);
+    return '';
+  }
+  function vistosDe(c) { return String(c.iw || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean); }
+  function enCatalogo(i) { return !!(i && i.pub && !i.oc && i.e === 'Disponible'); }
+  function opcionesPara(c) {
+    var vis = vistosDe(c), base = null, k;
+    for (k = vis.length - 1; k >= 0; k--) if (IM[vis[k]]) { base = IM[vis[k]]; break; }
+    var neg = base ? (esA(base) && esV(base) ? (c.bu === 'Compra' ? 'V' : 'A') : esV(base) ? 'V' : 'A') : (c.bu === 'Compra' ? 'V' : c.bu === 'Arriendo' ? 'A' : '');
+    var m = c.m || [], pr = function (i) { return neg === 'V' ? i.pv : i.pc; };
+    var cand = ((S.d && S.d.inmuebles) || []).filter(function (i) { return enCatalogo(i) && vis.indexOf(i.c) < 0 && (neg === 'V' ? esV(i) && i.pv : neg === 'A' ? esA(i) && i.pc : true); });
+    if (!base) {
+      cand = cand.filter(function (i) { return m.indexOf(i.c) > -1; });
+      return { base: null, neg: neg, ops: cand.sort(function (x, y) { return String(y.fc || '').localeCompare(String(x.fc || '')); }).slice(0, 3) };
+    }
+    var p0 = pr(base) || 0, dif = function (i) { var p = pr(i); return p0 && p ? Math.abs(p - p0) / p0 : 0.5; };
+    var mismo = cand.filter(function (i) { return i.t === base.t; }); if (mismo.length >= 3) cand = mismo;
+    var cerca = cand.filter(function (i) { return dif(i) <= 0.35; }); if (cerca.length >= 3) cand = cerca;
+    var sc = function (i) { var v = dif(i); if (base.b && i.b === base.b) v -= 0.12; if (m.indexOf(i.c) > -1) v -= 0.1; if (base.h && i.h) v += Math.abs(i.h - base.h) * 0.06; return v; };
+    return { base: base, neg: neg, ops: cand.sort(function (x, y) { return sc(x) - sc(y); }).slice(0, 3) };
+  }
+  function msgCliente(c, o) {
+    o = o || opcionesPara(c);
+    var hr = new Date().getHours(), n = corto(c.n), b = o.base, link = function (i) { return linkDe(i.c) + '?o=wa'; };
+    var t = (hr < 12 ? 'Buen día' : hr < 19 ? 'Buenas tardes' : 'Buenas noches') + (n ? ' ' + n : '') + ', ¿cómo estás? Te escribo de Tu Lugar Ya';
+    var lista = o.ops.map(function (i) { var pm = precioMsg(i, o.neg); return '• ' + nombreInm(i) + (pm ? ' · ' + pm : '') + (i.h ? ' · ' + i.h + ' hab.' : '') + '\n' + link(i); }).join('\n');
+    var cierre = o.ops.length > 1 ? '¿Te gustaría visitar alguno?' : '¿Te gustaría visitarlo?';
+    if (b) {
+      var que = artInm(b) + ' ' + String(b.t || 'inmueble').toLowerCase() + (b.b ? ' en ' + b.b : '');
+      if (enCatalogo(b)) return t + ' porque mostraste interés en ' + que + '. Te comparto la ficha:\n' + link(b) +
+        (o.ops.length ? '\n\nY ' + (o.ops.length === 1 ? 'este otro que te podría gustar' : 'estos otros que te podrían gustar') + ':\n' + lista + '\n\n¿Te gustaría visitar alguno?' : '\n\n¿Te gustaría visitarlo?');
+      return t + ' porque mostraste interés en ' + que + '. Ese ya no está disponible, ' + (o.ops.length ? 'pero ' + (o.ops.length === 1 ? 'tengo esta opción parecida' : 'tengo estas opciones parecidas') + ':\n' + lista + '\n\n' + cierre : 'pero cuéntame qué buscas (zona, presupuesto y habitaciones) y te mando opciones parecidas.');
+    }
+    if (o.ops.length) return t + (c.lw ? ' porque nos escribiste desde nuestra página.' : '.') + ' Te comparto ' + (o.ops.length === 1 ? 'una opción que encaja' : 'unas opciones que encajan') + ' con lo que buscas:\n' + lista + '\n\n' + cierre;
+    if (c.lw) return t + ' porque nos escribiste desde nuestra página. Cuéntame qué buscas (arriendo o compra, zona, presupuesto y habitaciones) y te mando opciones que te sirvan.';
+    return t + '. ¿Cómo vas con la búsqueda? Si sigues buscando, cuéntame y te mando opciones nuevas.';
+  }
+  function filaInm(i, nota) {
+    return '<button class="opt" data-ficha="' + esc(i.c) + '">' + (fotoInm(i, 160) ? '<img src="' + fotoInm(i, 160) + '" alt="" loading="lazy" data-falla>' : '<span class="phm"></span>') +
+      '<div><b>' + esc(i.c + ' · ' + (i.b || i.t)) + '</b><span>' + precioTxt(i).replace(/<[^>]+>/g, '') + (specs(i) ? ' · ' + esc(specs(i)) : '') + '</span>' + (nota ? '<span style="color:var(--st-pend);font-weight:700">' + esc(nota) + '</span>' : '') + '</div></button>';
+  }
+  function hojaEscribir(cod) {
+    var c = CM[cod]; if (!c) { toast('No encontré el cliente.', true); return; }
+    var o = opcionesPara(c), b = o.base, vis = vistosDe(c);
+    var x = '<h2>Escribirle a ' + esc(corto(c.n) || c.n) + '</h2><p class="lede">' + (c.lw ? 'Escribió desde el catálogo.' : 'Seguimiento.') + ' Revisa el mensaje (puedes tocarlo para cambiarlo) y envíalo.</p>';
+    if (b) x += '<div class="sec"><h3>Vio' + (vis.length > 1 ? ' · y ' + (vis.length - 1) + ' más' : '') + '</h3></div><div class="opts" style="max-height:none">' + filaInm(b, enCatalogo(b) ? '' : 'Ya no está disponible') + '</div>';
+    else x += '<div class="caja"><div class="fila"><span>Busca</span><b>' + esc(buscaTxt(c)) + '</b></div></div>';
+    if (o.ops.length) x += '<div class="sec"><h3>' + (b ? 'Le mando también' : 'Le mando') + ' · ' + o.ops.length + '</h3></div><div class="opts" style="max-height:none">' + o.ops.map(function (i) { return filaInm(i); }).join('') + '</div>';
+    x += '<div class="wap"><div class="para">Para: ' + esc(c.n) + (c.w ? ' · ' + esc(telF(c.w)) : '') + '</div><div class="burb" id="waTxt" contenteditable="true">' + esc(msgCliente(c, o)) + '</div></div>' +
+      '<div class="fijo-abajo"><button class="btn wa blk" data-escribir-enviar="' + esc(c.c) + '" data-ops="' + esc([b && enCatalogo(b) ? b.c : ''].concat(o.ops.map(function (i) { return i.c; })).filter(Boolean).join(',')) + '">' + I.wa + 'Enviar por WhatsApp</button><p class="chica" style="margin:8px 0 0">Queda registrado que le escribiste; el próximo seguimiento, en 2 días.</p></div>';
+    abrirHoja(x);
   }
   function buscaTxt(c) {
     return [c.bu, c.t, c.h ? c.h + '+ hab.' : '', c.ba, c.pmax ? 'hasta ' + copM(c.pmax) : ''].filter(Boolean).join(' · ') || 'Sin búsqueda registrada';
   }
   function leadHTML(c) {
-    var h = hoyISO(), motivo = c.lw ? 'Escribió desde el catálogo' + (c.iw ? ': ' + c.iw : '') : (c.ps < h ? 'Seguimiento vencido (' + diaCorto(c.ps) + ')' : 'Seguimiento para hoy');
+    var h = hoyISO(), vis = vistosDe(c), b0 = vis.length ? IM[vis[vis.length - 1]] : null;
+    var motivo = c.lw ? (b0 ? 'Vio ' + nombreInm(b0).replace(/^./, function (z) { return z.toLowerCase(); }) + ' · ' + precioTxt(b0).replace(/<[^>]+>/g, '') + (vis.length > 1 ? ' y ' + (vis.length - 1) + ' más' : '') : 'Escribió desde el catálogo') : (c.ps < h ? 'Seguimiento vencido (' + diaCorto(c.ps) + ')' : 'Seguimiento para hoy');
     return '<div class="lead"><div class="r"><span class="av">' + esc(ini(c.n)) + '</span><div><b>' + esc(c.n) + '</b><span class="d">' + esc(motivo) + '</span><span class="d">' + esc(buscaTxt(c)) + (c.m && c.m.length ? ' · <b style="display:inline;font-size:13px;color:var(--st-conf)">' + c.m.length + ' le sirven</b>' : '') + '</span></div></div>' +
       '<div class="dos"><button class="btn wa chico" data-wa-cli="' + esc(c.c) + '">' + I.wa + 'Escribirle</button><button class="btn lin chico" data-cliente="' + esc(c.c) + '">Ver cliente</button></div></div>';
   }
@@ -1426,7 +1477,7 @@ window.TLYMSG = (function () {
     x += '<div class="vhead"><div class="im">' + imgTag(i, 200) + '</div><div><b>' + esc(v.cl) + '</b><span>' + esc(v.i) + ' · ' + esc(nombreInm(i) || v.b) + '</span></div></div>';
     x += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">' + pill(v.e) + (v.r ? '<span class="tag">' + esc(v.r) + (v.v ? ' · ' + esc(copM(v.v)) : '') + '</span>' : '') + (cerrar ? '<span class="pill p-pend">Falta cerrarla</span>' : '') + '</div>';
     x += '<div class="caja" style="margin-top:0"><div class="fila"><span>Cuándo</span><b class="num">' + esc(diaRel(v.f) + ' · ' + h12(v.h)) + '</b></div>' +
-      '<div class="fila"><span>Muestra</span><b>' + esc(quienMuestra(v) || '—') + '</b></div>' +
+      '<div class="fila"><span>' + (quienesVan(v).length > 1 ? 'Van' : 'Muestra') + '</span><b>' + esc(quienMuestra(v) || '—') + '</b></div>' +
       (v.w ? '<div class="fila"><span>' + esc(corto(v.cl)) + '</span><div class="accs"><a class="circ" href="tel:' + esc(v.w) + '" aria-label="Llamar">' + I.tel + '</a><button class="circ wa" data-wa-num="' + esc(v.w) + '" aria-label="WhatsApp">' + I.wa + '</button></div></div>' : '') +
       (i && i.q ? '<div class="fila"><span>' + (i.org === 'Directo' ? 'Propietario' : 'Aliado') + '</span><b>' + esc(i.q) + '</b>' + (i.qt ? '<div class="accs"><a class="circ" href="tel:' + esc(i.qt) + '" aria-label="Llamar">' + I.tel + '</a><button class="circ wa" data-wa-num="' + esc(i.qt) + '" aria-label="WhatsApp">' + I.wa + '</button></div>' : '') + '</div>' : '') +
       (i && (i.edi || i.dir) ? '<div class="fila"><span>Ubicación</span><b>' + esc([i.edi, i.uni ? 'apto ' + i.uni : '', i.dir].filter(Boolean).join(' · ')) + '</b></div>' : '') +
@@ -1544,7 +1595,7 @@ window.TLYMSG = (function () {
   var NV = null;
   function hojaNueva(pre) {
     pre = pre || {};
-    NV = { cli: pre.cli || '', inm: pre.inm || '', colega: false, ops: [[pre.dia && pre.dia >= hoyISO() ? pre.dia : sumar(hoyISO(), 1), '10:00']], muestra: S.d.yo ? S.d.yo.nombre : '', conf: false, qc: '', qi: '' };
+    NV = { cli: pre.cli || '', inm: pre.inm || '', colega: false, ops: [[pre.dia && pre.dia >= hoyISO() ? pre.dia : sumar(hoyISO(), 1), '10:00']], va: S.d.yo ? [S.d.yo.nombre] : [], conf: false, qc: '', qi: '', nuevo: false, nn: '', nw: '', ncomo: 'WhatsApp' };
     pintarNueva();
   }
   function pintarNueva(foco) {
@@ -1554,6 +1605,12 @@ window.TLYMSG = (function () {
     if (NV.colega) {
       x += '<div class="seg" style="margin-bottom:8px"><button data-nv-colega="0" aria-pressed="false">Un cliente nuestro</button><button data-nv-colega="1" aria-pressed="true">Cliente de un colega</button></div>' +
         '<input class="inp" id="nvNom" placeholder="Nombre de quien visita" value="' + esc(NV.nom || '') + '"><input class="inp" id="nvDe" placeholder="¿De qué colega o inmobiliaria?" value="' + esc(NV.de || '') + '"><input class="inp" id="nvWa" inputmode="tel" placeholder="WhatsApp (opcional)" value="' + esc(NV.wa || '') + '">';
+    } else if (NV.nuevo) {
+      var como = ((S.d.listas || {}).como || []).length ? S.d.listas.como : ['WhatsApp', 'Instagram', 'Referido', 'Portal', 'Catálogo web', 'Otro'];
+      x += '<div class="seg" style="margin-bottom:8px"><button data-nv-colega="0" aria-pressed="true">Un cliente nuestro</button><button data-nv-colega="1" aria-pressed="false">Cliente de un colega</button></div>' +
+        '<input class="inp" id="nvNn" placeholder="Nombre del cliente nuevo" autocomplete="off" value="' + esc(NV.nn || '') + '"><input class="inp" id="nvNw" inputmode="tel" placeholder="WhatsApp (10 dígitos)" value="' + esc(NV.nw || '') + '">' +
+        '<select class="inp" id="nvNcomo" aria-label="¿Cómo llegó?">' + como.map(function (z) { return '<option' + (z === NV.ncomo ? ' selected' : '') + '>' + esc(z) + '</option>'; }).join('') + '</select>' +
+        '<button class="mas-op" data-nv-nuevo="0">Buscar un cliente que ya está</button>';
     } else if (c) {
       x += '<div class="elegido"><span class="av">' + esc(ini(c.n)) + '</span><div><b>' + esc(c.n) + '</b><span>' + esc(buscaTxt(c)) + '</span></div><button data-nv-cli="">Cambiar</button></div>';
     } else {
@@ -1567,7 +1624,7 @@ window.TLYMSG = (function () {
       return '<div class="fh"><input class="inp" type="date" data-nvf="' + k + '" value="' + esc(o[0]) + '" min="' + hoyISO() + '" aria-label="Día opción ' + (k + 1) + '"><input class="inp" type="time" step="900" data-nvh="' + k + '" value="' + esc(o[1]) + '" aria-label="Hora opción ' + (k + 1) + '">' +
         (k ? '<button class="x" data-nv-quitar="' + k + '" aria-label="Quitar">' + I.x + '</button>' : '<span></span>') + '</div>';
     }).join('') + '</div>' + (NV.ops.length < 3 ? '<button class="mas-op" data-nv-otra>+ Otra fecha posible</button>' : '') + '</div>';
-    x += '<div class="campo"><span class="lab">¿Quién la muestra?</span><div class="seg">' + eq.map(function (n) { return '<button data-nv-muestra="' + esc(n) + '" aria-pressed="' + (NV.muestra === n) + '">' + esc(n === 'Colega' ? 'El colega' : corto(n)) + '</button>'; }).join('') + '</div></div>';
+    x += '<div class="campo"><span class="lab">¿Quién va? Puedes marcar varios</span><div class="seg">' + eq.map(function (n) { return '<button data-nv-muestra="' + esc(n) + '" aria-pressed="' + (NV.va.indexOf(n) > -1) + '">' + esc(n === 'Colega' ? 'El colega' : corto(n)) + '</button>'; }).join('') + '</div></div>';
     x += '<label class="sw"><span>Ya está confirmada<small>Actívalo si el propietario ya dijo que sí</small></span><input type="checkbox" id="nvConf"' + (NV.conf ? ' checked' : '') + '></label>';
     x += '<div class="campo"><label for="nvNota">Nota (opcional)</label><input class="inp" id="nvNota" placeholder="Ej: llega con la esposa" value="' + esc(NV.nota || '') + '"></div>';
     x += '<button class="btn osc blk" id="nvGuardar">Guardar visita</button>';
@@ -1582,35 +1639,54 @@ window.TLYMSG = (function () {
     var q = norm(NV.qc).trim(), l = (S.d.clientes || []).filter(function (c) { return ['Buscando', 'En visitas'].indexOf(c.e) > -1 || q; })
       .filter(function (c) { return !q || norm(c.n + ' ' + c.w).indexOf(q) > -1; });
     if (NV.inm && !q) { var i = IM[NV.inm]; if (i && i.m && i.m.length) l.sort(function (a, b) { return (i.m.indexOf(b.c) > -1) - (i.m.indexOf(a.c) > -1); }); }
-    $('#nvCl').innerHTML = l.map(function (c) { var sirve = NV.inm && IM[NV.inm] && (IM[NV.inm].m || []).indexOf(c.c) > -1; return '<button class="opt" data-nv-cli="' + esc(c.c) + '"><span class="av">' + esc(ini(c.n)) + '</span><div><b>' + esc(c.n) + '</b><span>' + (sirve ? '✓ Le sirve este inmueble · ' : '') + esc(buscaTxt(c)) + '</span></div></button>'; }).join('') || '<div class="vacio">No lo encuentro. Créalo desde Clientes o usa "Cliente de un colega".</div>';
+    $('#nvCl').innerHTML = l.map(function (c) { var sirve = NV.inm && IM[NV.inm] && (IM[NV.inm].m || []).indexOf(c.c) > -1; return '<button class="opt" data-nv-cli="' + esc(c.c) + '"><span class="av">' + esc(ini(c.n)) + '</span><div><b>' + esc(c.n) + '</b><span>' + (sirve ? '✓ Le sirve este inmueble · ' : '') + esc(buscaTxt(c)) + '</span></div></button>'; }).join('') + (q && !l.length ? '<div class="vacio">No lo encuentro.</div>' : '') +
+      '<button class="mas-op" data-nv-nuevo="1">+ Es un cliente nuevo' + (q && !l.length ? ': crearlo aquí' : '') + '</button>';
   }
   function leerNueva() {
     $$('[data-nvf]').forEach(function (e) { NV.ops[+e.getAttribute('data-nvf')][0] = e.value; });
     $$('[data-nvh]').forEach(function (e) { NV.ops[+e.getAttribute('data-nvh')][1] = e.value; });
     if ($('#nvNom')) { NV.nom = $('#nvNom').value; NV.de = $('#nvDe').value; NV.wa = $('#nvWa').value; }
+    if ($('#nvNn')) { NV.nn = $('#nvNn').value; NV.nw = $('#nvNw').value; NV.ncomo = $('#nvNcomo').value; }
     if ($('#nvConf')) NV.conf = $('#nvConf').checked;
     if ($('#nvNota')) NV.nota = $('#nvNota').value;
   }
   function guardarNueva() {
     leerNueva();
     if (NV.colega) { if (!(NV.nom || '').trim()) { toast('Escribe el nombre de quien va a visitar.', true); return; } }
-    else if (!NV.cli) { toast('Escoge el cliente.', true); return; }
+    else if (NV.nuevo) {
+      if (!(NV.nn || '').trim()) { toast('Escribe el nombre del cliente.', true); return; }
+      if (tel10(NV.nw).length !== 10) { toast('El WhatsApp debe tener 10 dígitos.', true); return; }
+    } else if (!NV.cli) { toast('Escoge el cliente.', true); return; }
     if (!NV.inm) { toast('Escoge el inmueble.', true); return; }
     var ops = NV.ops.filter(function (o) { return o[0] && o[1]; });
     if (!ops.length) { toast('Pon el día y la hora.', true); return; }
-    var d = { inmueble: NV.inm, opciones: ops, muestra: NV.muestra, confirmada: NV.conf, notas: NV.nota || '' };
-    if (NV.colega) { d.nombre = NV.nom; d.de = NV.de; d.wa = NV.wa; } else d.cliente = NV.cli;
-    accion('crearVisita', d, 'Guardando la visita…').then(function (j) {
+    if (!NV.va.length) { toast('Marca quién va.', true); return; }
+    var d = { inmueble: NV.inm, opciones: ops, muestra: NV.va.slice(), confirmada: NV.conf, notas: NV.nota || '' };
+    var pre = Promise.resolve(NV.cli);
+    if (NV.colega) { d.nombre = NV.nom; d.de = NV.de; d.wa = NV.wa; pre = Promise.resolve(''); }
+    else if (NV.nuevo) {
+      var i0 = IM[NV.inm] || {}, nd = { nombre: NV.nn.trim(), wa: tel10(NV.nw), busca: esV(i0) && !esA(i0) ? 'Compra' : 'Arriendo', tipo: i0.t || '', barrios: i0.b || '', como: NV.ncomo || 'WhatsApp', notas: 'Creado al agendar la visita a ' + NV.inm, ciudad: i0.ci || 'Cali', hab: '', max: '', ia: '' };
+      pre = accion('crearCliente', { cliente: nd }, 'Guardando el cliente…').then(function (j) {
+        var cod = String(j.cliente || '').split(' - ')[0];
+        if (!cod) throw new Error('No se pudo crear el cliente.');
+        if (!CM[cod]) { var nc = { c: cod, n: nd.nombre, w: nd.wa, e: 'Buscando', bu: nd.busca, t: nd.tipo, ba: nd.barrios, m: [] }; CM[cod] = nc; S.d.clientes = (S.d.clientes || []).concat([nc]); }
+        NV.cli = cod; NV.nuevo = false; return cod;
+      });
+    }
+    pre.then(function (cli) {
+      if (cli) d.cliente = cli;
+      return accion('crearVisita', d, 'Guardando la visita…');
+    }).then(function (j) {
       var v = porId(j.id); S.dia = ops[0][0];
       if (S.tab === 'agenda' || S.tab === 'hoy') pintarSoloVista();
       if (!v) { cerrarHoja(); return; }
       var i = IM[v.i] || {};
-      abrirHoja('<h2>Visita guardada</h2><p class="lede">' + esc(v.cl) + ' · ' + esc(v.i) + ' · ' + esc(diaRel(v.f) + ' a las ' + h12(v.h)) + '. Quedó ' + (v.e === 'Confirmada' ? '<b>confirmada</b>' : '<b>por confirmar</b>') + ' en la agenda y en Google Calendar.</p>' +
+      abrirHoja('<h2>Visita guardada</h2><p class="lede">' + esc(v.cl) + ' · ' + esc(v.i) + ' · ' + esc(diaRel(v.f) + ' a las ' + h12(v.h)) + esc(quienTxt(v)) + '. Quedó ' + (v.e === 'Confirmada' ? '<b>confirmada</b>' : '<b>por confirmar</b>') + ' en la agenda y en Google Calendar.</p>' +
         (v.e === 'Confirmada' ? (v.w ? '<button class="btn wa blk" data-wa-visita="' + esc(v.id) + ':confirmada">' + I.wa + 'Avisarle a ' + esc(corto(v.cl)) + '</button>' : '')
           : (i.qt ? '<button class="btn wa blk" data-wa-visita="' + esc(v.id) + ':pedir">' + I.wa + 'Pedir confirmación ' + (i.org === 'Directo' ? 'al propietario' : 'al aliado') + '</button>' : '<div class="vacio">Este inmueble no tiene teléfono de contacto. Agrégalo en el sistema para pedir la confirmación desde aquí.</div>')) +
         '<button class="btn lin blk" style="margin-top:8px" data-visita="' + esc(v.id) + '">Ver la visita</button>');
       actualizar(false, true);
-    }).catch(function () {});
+    }).catch(function () { if ($('#nvGuardar')) pintarNueva(); });
   }
 
   /* Cliente */
@@ -1618,7 +1694,7 @@ window.TLYMSG = (function () {
     var c = CM[cod]; if (!c) { toast('No encontré el cliente.', true); return; }
     var vs = visitas().filter(function (v) { return v.cc === c.c; }).sort(orden).reverse(), ms = (c.m || []).map(function (k) { return IM[k]; }).filter(Boolean);
     var x = '<div class="vhead"><span class="av" style="width:56px;height:56px;font-size:18px">' + esc(ini(c.n)) + '</span><div><b>' + esc(c.n) + '</b><span>' + esc(telF(c.w)) + (c.cl ? ' · llegó por ' + esc(c.cl) : '') + '</span></div></div>';
-    x += '<div class="tres"><button class="btn wa chico" data-wa-num="' + esc(c.w) + '">' + I.wa + 'WhatsApp</button><a class="btn lin chico" href="tel:' + esc(c.w) + '">' + I.tel + 'Llamar</a><button class="btn lin chico" data-nueva-cli="' + esc(c.c) + '">' + I.cal + 'Visita</button></div>';
+    x += '<div class="tres"><button class="btn wa chico" data-wa-cli="' + esc(c.c) + '">' + I.wa + 'Escribirle</button><a class="btn lin chico" href="tel:' + esc(c.w) + '">' + I.tel + 'Llamar</a><button class="btn lin chico" data-nueva-cli="' + esc(c.c) + '">' + I.cal + 'Visita</button></div>';
     x += '<div class="caja"><div class="fila"><span>Busca</span><b>' + esc([c.bu, c.t].filter(Boolean).join(' · ') || '—') + '</b></div>' +
       (c.pmax ? '<div class="fila"><span>Presupuesto</span><b class="num">' + (c.pmin ? esc(copM(c.pmin)) + ' a ' : 'hasta ') + esc(copM(c.pmax)) + (c.bu === 'Arriendo' ? (c.ia === 'Sí' ? ' con adm.' : ' sin adm.') : '') + '</b></div>' : '') +
       (c.h ? '<div class="fila"><span>Habitaciones</span><b>' + c.h + ' o más</b></div>' : '') + (c.ba ? '<div class="fila"><span>Dónde</span><b>' + esc(c.ba) + '</b></div>' : '') +
@@ -2845,16 +2921,17 @@ window.TLYMSG = (function () {
     if (has('data-nueva-dia')) { hojaNueva({ dia: a('data-nueva-dia') }); return; }
     if (has('data-crear')) { var cr = a('data-crear'); if (cr === 'visita') hojaNueva({ dia: S.tab === 'agenda' ? S.dia : '' }); else if (cr === 'cliente') hojaNuevoCliente(); else if (cr === 'inmueble') abrirForm('nuevo'); else { cerrarHoja(); S.tab = 'inmuebles'; S.ficha = null; S.avisos = false; render(); setTimeout(function () { var q = $('#q'); if (q) q.focus(); }, 200); } return; }
     if (has('data-cliente')) { hojaCliente(a('data-cliente')); return; }
-    if (has('data-wa-cli')) {
-      var c0 = CM[a('data-wa-cli')];
+    if (has('data-wa-cli')) { hojaEscribir(a('data-wa-cli')); return; }
+    if (has('data-escribir-enviar')) {
+      var c0 = CM[a('data-escribir-enviar')];
       if (c0) {
-        var eraLead = !!c0.lw;
-        waAbrir(c0.w, msgCliente(c0));
-        api('contacto', { c: c0.c, proximo: sumar(hoyISO(), 2), nota: eraLead ? 'Le escribimos por WhatsApp (respondimos al catálogo)' : 'Le escribimos por WhatsApp' }).then(function () {
+        var eraLead = !!c0.lw, txw = ($('#waTxt') && $('#waTxt').innerText) || msgCliente(c0), mand = a('data-ops') || '';
+        waAbrir(c0.w, txw);
+        api('contacto', { c: c0.c, proximo: sumar(hoyISO(), 2), nota: 'Le escribimos por WhatsApp' + (eraLead ? ' (respondimos al catálogo)' : '') + (mand ? ': ' + mand.split(',').join(', ') : '') }).then(function () {
           c0.lw = false; c0.ps = sumar(hoyISO(), 2);
           if (S.d && S.d.emb && eraLead) { S.d.emb.sinContacto = (S.d.emb.sinContacto || []).filter(function (z) { return z.c !== c0.c; }); S.d.emb.contactados = (S.d.emb.contactados || 0) + 1; }
-          guardarLocal(); render(); toast('Quedó registrado que le escribiste.');
-        }).catch(function () {});
+          guardarLocal(); cerrarHoja(); render(); toast('Quedó registrado que le escribiste.');
+        }).catch(function (e) { toast(e.message, true); });
       }
       return;
     }
@@ -2887,12 +2964,17 @@ window.TLYMSG = (function () {
     if (has('data-avisar-inm')) { hojaAvisarInm(a('data-avisar-inm')); return; }
     if (has('data-avisar')) { var av = a('data-avisar').split(':'); hojaAvisar(av[0], av[1]); return; }
     if (b.id === 'nvGuardar') { guardarNueva(); return; }
-    if (has('data-nv-colega')) { leerNueva(); NV.colega = a('data-nv-colega') === '1'; NV.cli = ''; pintarNueva(NV.colega ? '#nvNom' : '#nvQc'); return; }
+    if (has('data-nv-colega')) { leerNueva(); NV.colega = a('data-nv-colega') === '1'; NV.cli = ''; NV.nuevo = false; pintarNueva(NV.colega ? '#nvNom' : '#nvQc'); return; }
+    if (has('data-nv-nuevo')) {
+      leerNueva(); NV.nuevo = a('data-nv-nuevo') === '1';
+      if (NV.nuevo) { var qn = String(NV.qc || '').trim(), dig = qn.replace(/\D/g, ''); if (dig.length >= 7 && dig.length === qn.replace(/[\s.+-]/g, '').length) NV.nw = NV.nw || dig; else if (qn && !NV.nn) NV.nn = qn; }
+      pintarNueva(NV.nuevo ? (NV.nn ? '#nvNw' : '#nvNn') : '#nvQc'); return;
+    }
     if (has('data-nv-cli')) { leerNueva(); NV.cli = a('data-nv-cli'); NV.qc = ''; pintarNueva(NV.cli ? '' : '#nvQc'); return; }
     if (has('data-nv-inm')) { leerNueva(); NV.inm = a('data-nv-inm'); NV.qi = ''; pintarNueva(NV.inm ? '' : '#nvQi'); return; }
     if (has('data-nv-otra')) { leerNueva(); var u = NV.ops[NV.ops.length - 1]; NV.ops.push([sumar(u[0] || hoyISO(), 1), u[1] || '10:00']); pintarNueva(); return; }
     if (has('data-nv-quitar')) { leerNueva(); NV.ops.splice(+a('data-nv-quitar'), 1); pintarNueva(); return; }
-    if (has('data-nv-muestra')) { leerNueva(); NV.muestra = a('data-nv-muestra'); pintarNueva(); return; }
+    if (has('data-nv-muestra')) { leerNueva(); var nm = a('data-nv-muestra'), kn = NV.va.indexOf(nm); if (kn > -1) { if (NV.va.length > 1) NV.va.splice(kn, 1); } else NV.va.push(nm); pintarNueva(); return; }
     if (has('data-nc-bu')) { $$('[data-nc-bu]').forEach(function (z) { z.setAttribute('aria-pressed', z === b); }); $('#ncIaW').hidden = a('data-nc-bu') !== 'Arriendo'; return; }
     if (b.id === 'ncGuardar') { guardarCliente(); return; }
     if (has('data-enviar-link')) {
