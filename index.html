@@ -81,6 +81,18 @@ svg { flex: none; }
 .tag { display: inline-flex; align-items: center; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 8px; background: var(--menta); color: var(--ink); white-space: nowrap; }
 
 .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.emb { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; display: grid; gap: 8px; }
+.emb-r { display: grid; grid-template-columns: 96px minmax(0, 1fr) 34px; align-items: center; gap: 10px; }
+.emb-l { font-size: 13px; font-weight: 600; color: var(--muted); }
+.emb-b { height: 10px; border-radius: 6px; background: var(--soft); overflow: hidden; display: block; }
+.emb-b i { display: block; height: 100%; border-radius: 6px; background: var(--st-conf); }
+.emb-r b { text-align: right; font-size: 16px; font-weight: 800; }
+.emb-als { display: grid; gap: 8px; margin-top: 8px; }
+.emb-al { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; text-align: left; width: 100%; background: var(--st-no-bg); color: var(--ink); border: 0; border-radius: 14px; padding: 10px 12px; font: inherit; }
+.emb-al b { font-size: 22px; font-weight: 800; color: var(--st-no); }
+.emb-al span { font-size: 13px; font-weight: 600; line-height: 1.35; }
+.emb-al.ok { background: var(--st-asis-bg); }
+.emb-al.ok b { color: var(--st-asis); }
 .tiles button { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px 10px; text-align: left; display: grid; gap: 4px; min-width: 0; }
 .tiles b { font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
 .tiles span { font-size: 12px; color: var(--muted); font-weight: 600; line-height: 1.3; }
@@ -891,7 +903,7 @@ window.TLYMSG = (function () {
   'use strict';
   var API = 'https://script.google.com/macros/s/AKfycbzbWblnXZ2ktqn1q3sylaNDP34ovmmSygImlA0E185h29N55IpgJ_PE_Pv7G8CcUJeV/exec';
   var SITIO = 'https://tu-lugar-ya.github.io/';
-  var VERSION = '1.4 · 11 nov 2026';
+  var VERSION = '1.5 · 18 nov 2026';
   var DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], DIASL = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   var ACTIVAS = ['Por confirmar', 'Confirmada', 'Reprogramada'];
@@ -1160,6 +1172,7 @@ window.TLYMSG = (function () {
     x += '<div class="tiles"><button data-ir="agenda"><b class="num">' + hoyV.length + '</b><span>' + (hoyV.length === 1 ? 'visita hoy' : 'visitas hoy') + '</span></button>' +
       '<button data-scroll="sec-conf"><b class="num" style="color:var(--st-pend)">' + (conf.length + cerrar.length) + '</b><span>por confirmar o cerrar</span></button>' +
       '<button data-scroll="sec-esc"><b class="num">' + esc2.length + '</b><span>clientes para escribir</span></button></div>';
+    if (S.d && S.d.emb) x += embudoHTML(S.d.emb);
     if (prox) {
       var i = IM[prox.i];
       x += '<div class="sec"><h3>Próxima visita</h3></div><div class="next"><div class="ph">' + imgTag(i, 900) + pill(prox.e) +
@@ -1180,6 +1193,27 @@ window.TLYMSG = (function () {
       return '<button data-ficha="' + esc(i.c) + '"><div class="im">' + imgTag(i, 480) + '</div><div class="tx"><b class="num">' + precioTxt(i) + '</b><span>' + esc(i.c + ' · ' + (i.b || i.t)) + '</span>' + (i.m && i.m.length ? '<span style="color:var(--st-conf);font-weight:700">Le sirve a ' + i.m.length + (i.m.length === 1 ? ' cliente' : ' clientes') + '</span>' : '') + '</div></button>';
     }).join('') + '</div>';
     return x + '</div>';
+  }
+  function embudoHTML(em) {
+    var pasos = [['Escribieron', em.leads], ['Contactados', em.contactados], ['Visitas', em.visitas], ['Ofertas', em.ofertas], ['Cierres', em.cierres]];
+    var max = Math.max(1, em.leads || 0, em.visitas || 0);
+    var x = '<div class="sec"><h3>Cómo vamos en ' + esc(em.mes || 'el mes') + '</h3></div><div class="emb">' + pasos.map(function (p) {
+      var w = p[1] ? Math.max(6, Math.round(p[1] / max * 100)) : 0;
+      return '<div class="emb-r"><span class="emb-l">' + p[0] + '</span><span class="emb-b"><i style="width:' + w + '%"></i></span><b class="num">' + (p[1] || 0) + '</b></div>';
+    }).join('') + '</div>';
+    var sc = em.sinContacto || [], vs = em.visitasSinResultado || [], al = [];
+    if (sc.length) al.push('<button class="emb-al" data-scroll="sec-esc"><b class="num">' + sc.length + '</b><span>' + (sc.length === 1 ? 'persona sigue esperando respuesta' : 'personas siguen esperando respuesta') + '</span></button>');
+    if (vs.length) al.push('<div class="emb-al"><b class="num">' + vs.length + '</b><span>' + (vs.length === 1 ? 'visita sin resultado: ' : 'visitas sin resultado: ') + esc(vs.slice(0, 3).map(function (v) { return String(v.cl || '').replace(/^(Coordinar visita|Visita) de(l)? /, '').split(' · ')[0]; }).join(', ') + (vs.length > 3 ? '…' : '')) + '. Ciérralas con «¿Cómo le fue?» en la Agenda.</span></div>');
+    if (!sc.length && !vs.length) al.push('<div class="emb-al ok"><b class="num">✓</b><span>Todos los que escribieron tienen respuesta y no hay visitas sin cerrar.</span></div>');
+    return x + '<div class="emb-als">' + al.join('') + '</div>';
+  }
+  function msgCliente(c) {
+    var yo = S.d && S.d.yo ? corto(S.d.yo.nombre) : '', n = corto(c.n);
+    if (!c.lw) return 'Hola ' + n + ', ¿cómo vas?';
+    var cods = String(c.iw || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean), cod = cods[cods.length - 1], im = cod ? IM[cod] : null;
+    var hola = 'Hola ' + n + ', te saluda ' + (yo || 'el equipo') + ' de Tu Lugar Ya. ';
+    if (im) return hola + 'Vi que te interesó el ' + String(im.t || 'inmueble').toLowerCase() + (im.b ? ' en ' + im.b : '') + ' (' + cod + '). ¿Sigues buscando? Si quieres coordinamos una visita esta semana o te mando opciones parecidas. https://tu-lugar-ya.github.io/i/' + cod + '/?o=wa';
+    return hola + 'Recibimos tu mensaje desde nuestra página. Cuéntame qué buscas (arriendo o compra, zona y presupuesto) y te mando opciones que te sirvan.';
   }
   function buscaTxt(c) {
     return [c.bu, c.t, c.h ? c.h + '+ hab.' : '', c.ba, c.pmax ? 'hasta ' + copM(c.pmax) : ''].filter(Boolean).join(' · ') || 'Sin búsqueda registrada';
@@ -2811,7 +2845,19 @@ window.TLYMSG = (function () {
     if (has('data-nueva-dia')) { hojaNueva({ dia: a('data-nueva-dia') }); return; }
     if (has('data-crear')) { var cr = a('data-crear'); if (cr === 'visita') hojaNueva({ dia: S.tab === 'agenda' ? S.dia : '' }); else if (cr === 'cliente') hojaNuevoCliente(); else if (cr === 'inmueble') abrirForm('nuevo'); else { cerrarHoja(); S.tab = 'inmuebles'; S.ficha = null; S.avisos = false; render(); setTimeout(function () { var q = $('#q'); if (q) q.focus(); }, 200); } return; }
     if (has('data-cliente')) { hojaCliente(a('data-cliente')); return; }
-    if (has('data-wa-cli')) { var c0 = CM[a('data-wa-cli')]; if (c0) waAbrir(c0.w, 'Hola ' + corto(c0.n) + ', ¿cómo vas?'); return; }
+    if (has('data-wa-cli')) {
+      var c0 = CM[a('data-wa-cli')];
+      if (c0) {
+        var eraLead = !!c0.lw;
+        waAbrir(c0.w, msgCliente(c0));
+        api('contacto', { c: c0.c, proximo: sumar(hoyISO(), 2), nota: eraLead ? 'Le escribimos por WhatsApp (respondimos al catálogo)' : 'Le escribimos por WhatsApp' }).then(function () {
+          c0.lw = false; c0.ps = sumar(hoyISO(), 2);
+          if (S.d && S.d.emb && eraLead) { S.d.emb.sinContacto = (S.d.emb.sinContacto || []).filter(function (z) { return z.c !== c0.c; }); S.d.emb.contactados = (S.d.emb.contactados || 0) + 1; }
+          guardarLocal(); render(); toast('Quedó registrado que le escribiste.');
+        }).catch(function () {});
+      }
+      return;
+    }
     if (has('data-wa-num')) { waAbrir(a('data-wa-num'), ''); return; }
     if (has('data-wa-visita')) { var wv = a('data-wa-visita').split(':'), vv = porId(wv[0]); if (vv) hojaWA(vv, wv[1]); return; }
     if (has('data-enviar-wa')) { var tx = ($('#waTxt') && $('#waTxt').innerText) || ''; waAbrir(a('data-enviar-wa'), tx); if (has('data-reg-cli')) api('contacto', { c: a('data-reg-cli'), proximo: sumar(hoyISO(), 3), nota: 'Le avisamos de un inmueble' }).catch(function () {}); return; }
