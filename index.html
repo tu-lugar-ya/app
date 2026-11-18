@@ -904,7 +904,7 @@ window.TLYMSG = (function () {
   'use strict';
   var API = 'https://script.google.com/macros/s/AKfycbzbWblnXZ2ktqn1q3sylaNDP34ovmmSygImlA0E185h29N55IpgJ_PE_Pv7G8CcUJeV/exec';
   var SITIO = 'https://tu-lugar-ya.github.io/';
-  var VERSION = '1.7 · 18 nov 2026';
+  var VERSION = '1.7.1 · 18 nov 2026';
   var DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], DIASL = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   var ACTIVAS = ['Por confirmar', 'Confirmada', 'Reprogramada'];
@@ -968,10 +968,11 @@ window.TLYMSG = (function () {
   var ini = function (n) { return String(n || '?').trim().split(/\s+/).map(function (x) { return x[0]; }).slice(0, 2).join('').toUpperCase(); };
   var img = function (id, w) { return 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(id) + '=w' + w; };
   var tel10 = function (t) { var d = String(t || '').replace(/\D/g, ''); if (d.length === 12 && d.indexOf('57') === 0) d = d.slice(2); return d; };
-  var waDe = function (t) { var x = String(t || '').trim(); if (/^@?[A-Za-z][A-Za-z0-9._]{2,34}$/.test(x)) return '@' + x.replace(/^@/, ''); return tel10(x); };
-  var esUsu = function (t) { return String(t || '').trim().charAt(0) === '@'; };
+  var limpiaWA = function (t) { var x = String(t || ''); try { x = x.normalize('NFKC'); } catch (e) {} return x.replace(/[​-‏‪-‮⁠-⁯﻿­]/g, '').replace(/＠/g, '@').trim(); };
+  var waDe = function (t) { var x = limpiaWA(t); if (/^@[^\s@]{3,40}$/.test(x)) return x; if (/^[A-Za-z][A-Za-z0-9._]{2,34}$/.test(x)) return '@' + x; return tel10(x); };
+  var esUsu = function (t) { return limpiaWA(t).charAt(0) === '@'; };
   var waOk = function (t) { var w = waDe(t); return esUsu(w) || w.length === 10; };
-  var telF = function (t) { if (esUsu(t)) return String(t).trim(); var d = tel10(t); return d.length === 10 ? d.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3') : d; };
+  var telF = function (t) { if (esUsu(t)) return limpiaWA(t); var d = tel10(t); return d.length === 10 ? d.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3') : d; };
   var esV = function (i) { return String(i.n || '').indexOf('Venta') > -1; };
   var esA = function (i) { return String(i.n || '').indexOf('rriendo') > -1; };
   var totalA = function (i) { return (i.pc || 0) + (i.ai === 'Sí' ? 0 : (i.ad || 0)); };
@@ -1470,7 +1471,7 @@ window.TLYMSG = (function () {
   function cerrarHoja() { $('#velo').classList.remove('on'); $('#hoja').classList.remove('on'); if (alCerrar) { var f = alCerrar; alCerrar = null; f(); } }
   function waAbrir(num, txt) {
     if (esUsu(num)) {
-      var u0 = String(num).trim();
+      var u0 = limpiaWA(num);
       try { if (navigator.clipboard) navigator.clipboard.writeText(u0).catch(function () {}); } catch (e) {}
       window.open('https://wa.me/' + (txt ? '?text=' + encodeURIComponent(txt) : ''), '_blank');
       toast('Escoge el chat de ' + u0 + ' en WhatsApp. Copié el usuario por si lo buscas.');
